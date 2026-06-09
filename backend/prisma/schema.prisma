@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Client {
-  id        Int      @id @default(autoincrement())
+  id        String   @id
   name      String   @db.VarChar(100)
   industry  String   @db.VarChar(50)
   active    Boolean  @default(true)
@@ -23,7 +23,7 @@ model Client {
 
 model DailyMetric {
   id          Int      @id @default(autoincrement())
-  clientId    Int      @map("client_id")
+  clientId    String   @map("client_id")
   source      String   @db.VarChar(30)
   date        DateTime @db.Date
   spend       Decimal  @default(0) @db.Decimal(10, 2)
@@ -46,7 +46,7 @@ model DailyMetric {
 
 model CampaignMetricDaily {
   id           Int      @id @default(autoincrement())
-  clientId     Int      @map("client_id")
+  clientId     String   @map("client_id")
   source       String   @db.VarChar(30)
   campaignId   String   @map("campaign_id") @db.VarChar(50)
   campaignName String   @map("campaign_name") @db.VarChar(200)
@@ -70,7 +70,7 @@ model CampaignMetricDaily {
 
 model AiInsight {
   id          Int      @id @default(autoincrement())
-  clientId    Int      @map("client_id")
+  clientId    String   @map("client_id")
   date        DateTime @db.Date
   type        String   @db.VarChar(30)
   severity    String?  @db.VarChar(10)

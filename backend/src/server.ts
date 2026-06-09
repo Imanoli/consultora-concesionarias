@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { clientRoutes } from './routes/clients.js'
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10)
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:3000'
@@ -18,6 +19,8 @@ async function main() {
     origin: [FRONTEND_URL],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
+
+  await app.register(clientRoutes)
 
   app.get('/health', async () => ({
     status: 'ok',
