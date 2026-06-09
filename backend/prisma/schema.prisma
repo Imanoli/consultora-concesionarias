@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  industry  String   @db.VarChar(50)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dailyMetrics         DailyMetric[]
+  campaignMetricsDaily CampaignMetricDaily[]
+  aiInsights           AiInsight[]
+
+  @@map("clients")
+}
+
+model DailyMetric {
+  id          Int      @id @default(autoincrement())
+  clientId    Int      @map("client_id")
+  source      String   @db.VarChar(30)
+  date        DateTime @db.Date
+  spend       Decimal  @default(0) @db.Decimal(10, 2)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  leads       Int      @default(0)
+  cpl         Decimal? @db.Decimal(10, 2)
+  ctr         Decimal? @db.Decimal(5, 4)
+  cpm         Decimal? @db.Decimal(10, 2)
+  conversions Int      @default(0)
+  sessions    Int      @default(0)
+  rawData     Json?    @map("raw_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, source, date])
+  @@map("daily_metrics")
+}
+
+model CampaignMetricDaily {
+  id           Int      @id @default(autoincrement())
+  clientId     Int      @map("client_id")
+  source       String   @db.VarChar(30)
+  campaignId   String   @map("campaign_id") @db.VarChar(50)
+  campaignName String   @map("campaign_name") @db.VarChar(200)
+  date         DateTime @db.Date
+  spend        Decimal  @default(0) @db.Decimal(10, 2)
+  impressions  Int      @default(0)
+  clicks       Int      @default(0)
+  leads        Int      @default(0)
+  cpl          Decimal? @db.Decimal(10, 2)
+  ctr          Decimal? @db.Decimal(5, 4)
+  cpm          Decimal? @db.Decimal(10, 2)
+  conversions  Int      @default(0)
+  rawData      Json?    @map("raw_data")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, source, campaignId, date])
+  @@map("campaign_metrics_daily")
+}
+
+model AiInsight {
+  id          Int      @id @default(autoincrement())
+  clientId    Int      @map("client_id")
+  date        DateTime @db.Date
+  type        String   @db.VarChar(30)
+  severity    String?  @db.VarChar(10)
+  title       String   @db.VarChar(200)
+  body        String   @db.Text
+  rawPrompt   String?  @map("raw_prompt") @db.Text
+  rawResponse String?  @map("raw_response") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@map("ai_insights")
+}

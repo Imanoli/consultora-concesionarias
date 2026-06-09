@@ -1,0 +1,37 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+.next/
+out/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+*.local
+
+# Secretos
+secrets/
+*.pem
+*.key
+
+# Prisma
+backend/prisma/migrations/dev.db
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# PM2
+ecosystem.config.js.bak

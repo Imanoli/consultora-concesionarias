@@ -1,0 +1,16 @@
+{
+  "name": "consultora-concesionarias",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter frontend --filter backend dev",
+    "build": "pnpm --filter frontend build && pnpm --filter backend build",
+    "lint": "pnpm --parallel --filter frontend --filter backend lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
