@@ -200,13 +200,18 @@ Consultora-Concesionarias/
 
 1\. \*\*Etapa 1 — Setup base\*\* (en curso): estructura del repo, schema Prisma, endpoints vacíos, frontend con login y dashboard vacío.
 
-2\. \*\*Etapa 2\*\* — Integración Meta Ads (cron + persistencia).
+2\. \*\*Etapa 2 — COMPLETADA\*\* — Integración Meta Ads (cron + persistencia).
 
-3\. \*\*Etapa 3\*\* — Dashboard visual con KPIs y filtros de fecha.
+3\. \*\*Etapa 3 backend — COMPLETADA\*\* — Endpoints GET para consumo de datos:
+   - \`GET /api/metrics\` — KPIs agregados del período + comparación con período anterior
+   - \`GET /api/metrics/daily\` — serie temporal diaria para gráficos
+   - \`GET /api/campaigns\` — desglose por campaña ordenado por spend
 
-4\. \*\*Etapa 4\*\* — Capa IA: alertas por reglas + análisis diario con Claude.
+4\. \*\*Etapa 3.5 — PENDIENTE\*\* — Frontend: dashboard visual con KPIs, gráficos y filtros de fecha (consume los endpoints de Etapa 3 backend).
 
-5\. \*\*Etapa 5\*\* — GA4, Clarity, Google Ads completos + chat interactivo.
+5\. \*\*Etapa 4\*\* — Capa IA: alertas por reglas + análisis diario con Claude.
+
+6\. \*\*Etapa 5\*\* — GA4, Clarity, Google Ads completos + chat interactivo.
 
 
 

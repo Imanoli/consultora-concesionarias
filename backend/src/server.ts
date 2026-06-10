@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { clientRoutes } from './routes/clients.js'
 import { syncRoutes } from './routes/sync.js'
+import { metricsRoutes } from './routes/metrics.js'
 import { startCron } from './cron/index.js'
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10)
@@ -24,6 +25,7 @@ async function main() {
 
   await app.register(clientRoutes)
   await app.register(syncRoutes)
+  await app.register(metricsRoutes)
   startCron(app)
 
   app.get('/health', async () => ({
