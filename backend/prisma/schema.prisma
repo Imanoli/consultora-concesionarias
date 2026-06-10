@@ -8,11 +8,13 @@ datasource db {
 }
 
 model Client {
-  id        String   @id
-  name      String   @db.VarChar(100)
-  industry  String   @db.VarChar(50)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
+  id              String   @id
+  name            String   @db.VarChar(100)
+  industry        String   @db.VarChar(50)
+  active          Boolean  @default(true)
+  metaAdAccountId String?  @map("meta_ad_account_id") @db.VarChar(30)
+  metaLeadActions Json?    @map("meta_lead_actions")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   dailyMetrics         DailyMetric[]
   campaignMetricsDaily CampaignMetricDaily[]

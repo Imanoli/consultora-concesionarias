@@ -1,6 +1,8 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { clientRoutes } from './routes/clients.js'
+import { syncRoutes } from './routes/sync.js'
+import { startCron } from './cron/index.js'
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10)
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:3000'
@@ -21,6 +23,8 @@ async function main() {
   })
 
   await app.register(clientRoutes)
+  await app.register(syncRoutes)
+  startCron(app)
 
   app.get('/health', async () => ({
     status: 'ok',

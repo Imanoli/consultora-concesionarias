@@ -210,6 +210,14 @@ Consultora-Concesionarias/
 
 
 
+\## TODOs pendientes para deploy en VPS
+
+
+
+\- \*\*\[TODO — antes de deploy VPS\]\*\* Generar un nuevo System User Token para Meta con scopes mínimos únicamente: \`ads\_read\` + \`business\_management\`. El token actual tiene \`ads\_management\` (escritura) que no es necesario. Pasos: Business Manager → Configuración del negocio → Usuarios del sistema → Generar nuevo token → App \`1712798116410161\` → solo \`ads\_read\` + \`business\_management\`.
+
+
+
 \## Lo que NO hacer
 
 
