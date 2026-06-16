@@ -1,5 +1,5 @@
 const logos: Record<string, string> = {
-  esac: '/logos/esac.svg',
+  esac: '/logos/esac.jpg',
 }
 
 export function getClientLogo(clientId: string): string | null {

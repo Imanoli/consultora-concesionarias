@@ -52,7 +52,7 @@ export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosU
               alt={clientName}
               width={160}
               height={48}
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain bg-white rounded-md px-2 py-1"
               priority
             />
           ) : (
@@ -155,11 +155,11 @@ export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosU
         </CardContent>
       </Card>
 
-      {/* Análisis IA (Meta + Google Ads) */}
-      <AiInsights clientId={clientId} />
-
       {/* Sección Google Ads */}
       <GoogleAdsSection clientId={clientId} from={range.from} to={range.to} />
+
+      {/* Análisis IA */}
+      <AiInsights clientId={clientId} />
 
       {/* Sección GA4 */}
       <Ga4Section clientId={clientId} from={range.from} to={range.to} />
