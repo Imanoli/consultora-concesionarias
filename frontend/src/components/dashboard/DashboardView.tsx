@@ -64,14 +64,14 @@ export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosU
             </p>
             {metaFondosUsd !== null && (
               <span className={[
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
                 metaFondosUsd < 30
-                  ? 'bg-red-100 text-red-700'
+                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
                   : metaFondosUsd < 50
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-green-100 text-green-700',
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
               ].join(' ')}>
-                Fondos {formatCurrency(metaFondosUsd)}
+                Meta · Fondos {formatCurrency(metaFondosUsd)}
               </span>
             )}
           </div>
