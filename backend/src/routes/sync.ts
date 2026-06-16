@@ -161,7 +161,8 @@ export async function syncRoutes(app: FastifyInstance) {
         await checkAlerts(
           client.id,
           client.name,
-          client.metaAdAccountId ?? undefined,
+          client.metaAdAccountId     ?? undefined,
+          client.googleAdsCustomerId ?? undefined,
           msg => { logs.push(msg); app.log.info(msg) },
         )
       }
