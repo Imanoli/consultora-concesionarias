@@ -60,7 +60,7 @@ export function AiInsights({ clientId }: { clientId: string }) {
     </div>
   )
 
-  if (error || !data || data.length === 0) return null
+  if (error || !data || !Array.isArray(data) || data.length === 0) return null
 
   const latestDate = data[0].date
   const latest     = data.filter(i => i.date === latestDate)

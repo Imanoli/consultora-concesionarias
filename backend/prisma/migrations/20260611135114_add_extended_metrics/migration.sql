@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE `campaign_metrics_daily` ADD COLUMN `cpc` DECIMAL(10, 2) NULL,
+    ADD COLUMN `frequency` DECIMAL(6, 2) NULL,
+    ADD COLUMN `instagram_follows` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `link_clicks` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `purchases` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `reach` INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE `daily_metrics` ADD COLUMN `cpc` DECIMAL(10, 2) NULL,
+    ADD COLUMN `frequency` DECIMAL(6, 2) NULL,
+    ADD COLUMN `instagram_follows` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `link_clicks` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `purchases` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `reach` INTEGER NOT NULL DEFAULT 0;

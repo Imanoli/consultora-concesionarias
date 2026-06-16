@@ -6,20 +6,21 @@ export interface MetaAction {
 }
 
 export interface MetaCampaignInsight {
-  campaign_id:     string
-  campaign_name:   string
-  date_start:      string
-  date_stop:       string
-  spend:           string
-  impressions:     string
-  clicks:          string
-  reach:           string
-  frequency:       string
-  cpm:             string
-  cpc:             string
-  ctr:             string
-  actions?:        MetaAction[]
-  unique_actions?: MetaAction[]
+  campaign_id:        string
+  campaign_name:      string
+  date_start:         string
+  date_stop:          string
+  spend:              string
+  impressions:        string
+  clicks:             string
+  reach:              string
+  frequency:          string
+  cpm:                string
+  cpc:                string
+  ctr:                string
+  inline_link_clicks: string
+  actions?:           MetaAction[]
+  unique_actions?:    MetaAction[]
 }
 
 export class MetaApiError extends Error {
@@ -77,7 +78,7 @@ function assertNoError(body: Record<string, unknown>): void {
 function buildUrl(base: string, account: string, token: string, proof: string, date: string): string {
   const u = new URL(`${base}/${account}/insights`)
   u.searchParams.set('level',                           'campaign')
-  u.searchParams.set('fields',                          'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,cpm,cpc,ctr,actions,unique_actions')
+  u.searchParams.set('fields',                          'campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,cpm,cpc,ctr,inline_link_clicks,actions,unique_actions')
   u.searchParams.set('time_increment',                  '1')
   u.searchParams.set('time_range',                      JSON.stringify({ since: date, until: date }))
   u.searchParams.set('use_account_attribution_setting', 'true')
