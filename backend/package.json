@@ -17,10 +17,14 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
     "@fastify/cors": "^9.0.1",
+    "@google-analytics/data": "^6.1.0",
     "@prisma/client": "^5.14.0",
+    "@types/nodemailer": "^8.0.0",
     "dotenv": "^17.4.2",
     "fastify": "^4.27.0",
+    "google-ads-api": "^23.0.1",
     "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.11",
     "zod": "^3.23.0"
   },
   "devDependencies": {
