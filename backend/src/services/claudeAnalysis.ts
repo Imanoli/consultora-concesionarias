@@ -100,11 +100,23 @@ CLIENTE: ${clientName}
 - Scroll depth en Clarity es indicador clave de calidad de la landing: un scroll bajo con muchos leads sugiere formulario ubicado arriba; scroll alto con pocos leads sugiere problema de contenido o propuesta de valor.
 - Estacionalidad posible: mayor interés solar en primavera/verano argentino (septiembre–marzo).
 
+OBJETIVOS DE NEGOCIO (umbrales definidos por el cliente — usar como referencia primaria):
+Meta Ads:
+- CTR objetivo: >0,5% (si está por debajo → problema de creative o segmentación)
+- CPL objetivo: <USD 2,50 (si está por encima → revisar audiencia, copy, landing)
+- Frecuencia objetivo: <3,0 (si supera → fatiga de audiencia, rotar creativos)
+Google Ads:
+- CTR objetivo: >4% (si está por debajo → revisar copies de anuncios o keywords)
+- Costo/conversión objetivo: <ARS 25.000 (si supera → revisar pujas o landing)
+GA4 + Clarity:
+- Detectar fricciones en el sitio web: bounce alto, scroll bajo, rage clicks, dead clicks, sesiones sin engagement.
+- Detectar inconsistencias: muchas sesiones GA4 pero pocos leads (problema de landing o formulario), mucho scroll pero cero conversiones (propuesta de valor débil o CTA mal ubicado).
+
 REGLAS DEL ANÁLISIS (respetarlas estrictamente):
 1. Meta Ads y Google Ads son las plataformas primarias del análisis. Generá al menos un insight por cada una si hay datos.
 2. El presupuesto de cada plataforma es fijo y planificado por separado. NUNCA recomendes mover presupuesto de Meta a Google ni al revés.
-3. GA4 y Clarity son datos complementarios: usalos para reforzar o contextualizar los insights de paid media, no como foco principal.
-4. Para detectar anomalías, comparar el día de ayer con el promedio de 7 días y 30 días. Una anomalía es una desviación >20% en métricas clave (CPL, CTR, conversiones). Indicar siempre el % de desvío en el body.
+3. GA4 y Clarity son datos complementarios: usalos para detectar fricciones en el sitio y contextualizar los insights de paid media.
+4. Para detectar anomalías, comparar primero contra los OBJETIVOS DE NEGOCIO definidos arriba. Luego comparar contra promedio 7d y 30d. Indicar siempre el % de desvío vs objetivo y vs histórico en el body.
 5. Las recomendaciones deben ser específicas y accionables: mencionar qué ajustar (creative, audiencia, puja, horario, copy de la landing) no solo describir el problema.
 6. Si hay datos de B2C y B2B en la misma plataforma, considerar que pueden tener CPL y comportamiento muy distintos.
 
@@ -122,7 +134,7 @@ REGLAS DEL ANÁLISIS (respetarlas estrictamente):
 Respondé ÚNICAMENTE con un array JSON válido. Sin texto antes ni después. Sin markdown. Sin \`\`\`.
 Generá entre 4 y 6 insights. Cada elemento:
 - "type": "anomaly" (métrica fuera de rango histórico) | "recommendation" (acción de optimización) | "summary" (balance general del día)
-- "severity": "critical" (CPL >30% vs 30d, CTR <-30% vs 30d, frecuencia >3.5, leads=0 con gasto) | "warning" (desvíos 15-30%, frecuencia 2.5-3.5) | "info" (normal o positivo)
+- "severity": "critical" (Meta: CPL>USD 2,50 O frecuencia>3,0 O CTR<0,5% O leads=0 con gasto; Google: CTR<4% O costo/conv>ARS 25.000; Web: rage clicks altos O scroll<30% con tráfico pagado) | "warning" (Meta: CPL entre 2,00-2,50 O frecuencia 2,5-3,0 O CTR 0,3-0,5%; Google: CTR 3-4% O costo/conv 20.000-25.000; Web: scroll 30-50% O bounce alto) | "info" (métricas dentro de objetivo o mejoras positivas)
 - "title": máx 80 caracteres
 - "body": análisis concreto + acción específica a tomar, máx 450 caracteres
 
