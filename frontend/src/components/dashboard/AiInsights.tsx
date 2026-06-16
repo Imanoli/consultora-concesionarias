@@ -13,9 +13,15 @@ interface Insight {
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? '/backend'
 
 const severityStyles: Record<string, string> = {
-  critical:    'border-red-300    bg-red-50    text-red-900',
-  warning:     'border-amber-300  bg-amber-50  text-amber-900',
-  info:        'border-blue-200   bg-blue-50   text-blue-900',
+  critical: 'border-red-500/30    bg-red-500/10    text-red-300',
+  warning:  'border-amber-500/30  bg-amber-500/10  text-amber-300',
+  info:     'border-indigo-500/30 bg-indigo-500/10 text-indigo-300',
+}
+
+const severityDot: Record<string, string> = {
+  critical: 'bg-red-400',
+  warning:  'bg-amber-400',
+  info:     'bg-indigo-400',
 }
 
 const typeLabel: Record<string, string> = {
@@ -26,15 +32,17 @@ const typeLabel: Record<string, string> = {
 
 function InsightCard({ insight }: { insight: Insight }) {
   const style = severityStyles[insight.severity] ?? severityStyles.info
+  const dot   = severityDot[insight.severity]   ?? severityDot.info
   return (
-    <div className={`rounded-lg border p-3 ${style}`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs font-semibold uppercase tracking-wide opacity-70">
+    <div className={`rounded-xl border p-4 ${style}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+        <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
           {typeLabel[insight.type] ?? insight.type}
         </span>
       </div>
-      <p className="text-sm font-semibold leading-tight">{insight.title}</p>
-      <p className="text-xs mt-1 opacity-80 leading-relaxed">{insight.body}</p>
+      <p className="text-sm font-semibold leading-snug">{insight.title}</p>
+      <p className="text-xs mt-1.5 opacity-75 leading-relaxed">{insight.body}</p>
     </div>
   )
 }
@@ -47,19 +55,17 @@ export function AiInsights({ clientId }: { clientId: string }) {
   )
 
   if (isLoading) return (
-    <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+    <div className="rounded-xl border border-white/8 bg-card p-4 text-sm text-muted-foreground">
       Cargando análisis...
     </div>
   )
 
   if (error || !data || data.length === 0) return null
 
-  // Mostrar solo el último día con insights
   const latestDate = data[0].date
-  const latest = data.filter(i => i.date === latestDate)
+  const latest     = data.filter(i => i.date === latestDate)
 
-  // Ordenar: critical → warning → info; summary siempre al final
-  const order = { critical: 0, warning: 1, info: 2 }
+  const order  = { critical: 0, warning: 1, info: 2 }
   const sorted = [...latest].sort((a, b) => {
     if (a.type === 'summary') return 1
     if (b.type === 'summary') return -1

@@ -17,9 +17,9 @@ export function Sidebar({ clients }: Props) {
   return (
     <>
       {/* Desktop: sidebar vertical fija */}
-      <aside className="hidden lg:flex flex-col w-56 min-h-screen border-r border-border bg-sidebar shrink-0">
+      <aside className="hidden lg:flex flex-col w-56 min-h-screen border-r border-white/8 bg-sidebar shrink-0">
         <div className="px-4 py-5">
-          <p className="font-semibold text-sm text-sidebar-foreground">Dashboard IRM</p>
+          <p className="font-semibold text-sm text-sidebar-foreground tracking-tight">Dashboard IRM</p>
           <p className="text-xs text-muted-foreground mt-0.5">Marketing digital</p>
         </div>
 
@@ -36,8 +36,8 @@ export function Sidebar({ clients }: Props) {
                 className={cn(
                   'flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors',
                   pathname === `/dashboard/${client.id}`
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
+                    ? 'bg-primary/15 text-primary font-medium border border-primary/25'
+                    : 'text-sidebar-foreground hover:bg-white/6'
                 )}
               >
                 {logo ? (
