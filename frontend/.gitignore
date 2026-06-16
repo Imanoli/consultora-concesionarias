@@ -1,0 +1,8 @@
+.vercel
+.next/
+node_modules/
+*.log
+*.log.err
+tsconfig.tsbuildinfo
+package-lock.json
+next-env.d.ts
