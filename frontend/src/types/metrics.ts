@@ -1,10 +1,12 @@
 export interface Client {
-  id:                   string
-  name:                 string
-  industry:             string
-  active:               boolean
-  metaFondosUsd:        number | null
-  metaFondosUpdatedAt:  string | null
+  id:                       string
+  name:                     string
+  industry:                 string
+  active:                   boolean
+  metaFondosUsd:            number | null
+  metaFondosUpdatedAt:      string | null
+  googleAdsFondosArs:       number | null
+  googleAdsFondosUpdatedAt: string | null
 }
 
 export interface KpiSet {

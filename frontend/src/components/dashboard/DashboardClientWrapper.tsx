@@ -7,10 +7,12 @@ const DashboardView = dynamic(
 )
 
 interface Props {
-  clientId:            string
-  clientName:          string
-  metaFondosUsd:       number | null
-  metaFondosUpdatedAt: string | null
+  clientId:                 string
+  clientName:               string
+  metaFondosUsd:            number | null
+  metaFondosUpdatedAt:      string | null
+  googleAdsFondosArs:       number | null
+  googleAdsFondosUpdatedAt: string | null
 }
 
 export function DashboardClientWrapper(props: Props) {

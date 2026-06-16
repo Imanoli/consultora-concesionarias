@@ -17,15 +17,17 @@ import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate 
 import { getClientLogo } from '@/lib/clientLogos'
 
 interface Props {
-  clientId:            string
-  clientName:          string
-  metaFondosUsd:       number | null
-  metaFondosUpdatedAt: string | null
+  clientId:                 string
+  clientName:               string
+  metaFondosUsd:            number | null
+  metaFondosUpdatedAt:      string | null
+  googleAdsFondosArs:       number | null
+  googleAdsFondosUpdatedAt: string | null
 }
 
 interface DateRange { from: string; to: string }
 
-export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosUpdatedAt }: Props) {
+export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosUpdatedAt, googleAdsFondosArs, googleAdsFondosUpdatedAt }: Props) {
   const logo = getClientLogo(clientId)
   const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
 
@@ -65,13 +67,25 @@ export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosU
             {metaFondosUsd !== null && (
               <span className={[
                 'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                metaFondosUsd < 30
+                metaFondosUsd < 40
                   ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                  : metaFondosUsd < 50
+                  : metaFondosUsd < 100
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                   : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
               ].join(' ')}>
                 Meta · Fondos {formatCurrency(metaFondosUsd)}
+              </span>
+            )}
+            {googleAdsFondosArs !== null && (
+              <span className={[
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                googleAdsFondosArs < 50_000
+                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                  : googleAdsFondosArs < 100_000
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+              ].join(' ')}>
+                Google · Fondos ARS {googleAdsFondosArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
               </span>
             )}
           </div>

@@ -96,7 +96,7 @@ const SEVERITY_LABEL: Record<string, string> = {
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 }
 
-function buildEmailHtml(clientName: string, date: string, insights: Awaited<ReturnType<typeof analyzeWithClaude>>['insights']): string {
+function buildEmailHtml(clientName: string, date: string, insights: Awaited<ReturnType<typeof analyzeWithClaude>>['insights'], balanceWarnings: string[] = []): string {
   const sorted = [...insights].sort(
     (a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3)
   )
@@ -114,7 +114,13 @@ function buildEmailHtml(clientName: string, date: string, insights: Awaited<Retu
       </td>
     </tr>`).join('')
 
-  const logoUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/logos/esac.jpg`
+  const logoUrl    = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/logos/esac.jpg`
+  const dashUrl    = process.env.FRONTEND_URL ?? 'http://localhost:3000'
+
+  const balanceAlerts = balanceWarnings.map(w => `
+    <div style="margin:0 32px 0;padding:12px 16px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:0 4px 4px 0;font-size:13px;color:#991b1b">
+      <strong>🔴 ${w}</strong>
+    </div>`).join('')
 
   return `
 <!DOCTYPE html>
@@ -127,11 +133,12 @@ function buildEmailHtml(clientName: string, date: string, insights: Awaited<Retu
       <div style="color:#9ca3af;font-size:12px;text-transform:uppercase;letter-spacing:.05em">Resumen diario IA</div>
       <div style="color:#6b7280;font-size:14px;margin-top:4px">${date}</div>
     </div>
+    ${balanceAlerts}
     <table style="width:100%;border-collapse:collapse">
       <tbody>${rows}</tbody>
     </table>
     <div style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb">
-      <a href="${process.env.FRONTEND_URL ?? 'http://localhost:3000'}" style="color:#6b7280;font-size:12px;text-decoration:none">
+      <a href="${dashUrl}" style="color:#6b7280;font-size:12px;text-decoration:none">
         Ver dashboard completo →
       </a>
     </div>
@@ -234,7 +241,15 @@ export async function runDailyAnalysis(
   try {
     const subject = `Resumen diario - ${client.name}`
 
-    await sendAlert(subject, buildEmailHtml(client.name, targetDate, insights))
+    // Alertas de saldo rojo para incluir en el email
+    const freshClient = await prisma.client.findUnique({ where: { id: clientId }, select: { metaFondosUsd: true, googleAdsFondosArs: true } })
+    const balanceWarnings: string[] = []
+    const metaUsd  = Number(freshClient?.metaFondosUsd  ?? 999)
+    const gadsArs  = Number(freshClient?.googleAdsFondosArs ?? 999_999)
+    if (metaUsd  < 40)     balanceWarnings.push(`Meta Ads — Fondos críticos: USD ${metaUsd.toFixed(2)}. Recargá antes de que se pausan las campañas.`)
+    if (gadsArs  < 50_000) balanceWarnings.push(`Google Ads — Fondos críticos: ARS ${gadsArs.toLocaleString('es-AR')}. Recargá antes de que se pausan las campañas.`)
+
+    await sendAlert(subject, buildEmailHtml(client.name, targetDate, insights, balanceWarnings))
     log(`[analysis] Email enviado a ${process.env.EMAIL_TO}`)
   } catch (err) {
     log(`[analysis] Error enviando email: ${(err as Error).message}`)

@@ -18,6 +18,8 @@ export default async function DashboardPage({ params }: Props) {
       clientName={clientName}
       metaFondosUsd={client?.metaFondosUsd ?? null}
       metaFondosUpdatedAt={client?.metaFondosUpdatedAt ?? null}
+      googleAdsFondosArs={client?.googleAdsFondosArs ?? null}
+      googleAdsFondosUpdatedAt={client?.googleAdsFondosUpdatedAt ?? null}
     />
   )
 }
