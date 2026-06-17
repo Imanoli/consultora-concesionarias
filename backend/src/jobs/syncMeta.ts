@@ -72,16 +72,13 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
       continue
     }
 
-    // Usar el ctr devuelto por Meta (link-click based, como muestra BM).
-    // Meta lo devuelve como porcentaje (ej. "0.63"), lo almacenamos como decimal (0.0063).
-    const ctrMeta = parseNum(insight.ctr) / 100
-
     campaigns.push({
       id:    insight.campaign_id,
       name:  insight.campaign_name,
       spend, impressions, clicks, leads, reach, linkClicks, purchases, instagramFollows,
       frequency,
-      ctr:   ctrMeta > 0 ? ctrMeta : (impressions > 0 ? linkClicks / impressions : null),
+      // CTR de clic en enlace: inline_link_clicks / impressions (no el CTR general de Meta)
+      ctr:   impressions > 0 ? linkClicks / impressions : null,
       cpm:   impressions > 0 ? (spend / impressions) * 1000 : null,
       cpl:   leads > 0 ? spend / leads : null,
       cpc:   parseNum(insight.cpc) || null,
@@ -108,7 +105,7 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
     purchases:        totalPurchases,
     instagramFollows: totalInstagramFollows,
     frequency:        totalReach > 0 ? totalImpressions / totalReach : null,
-    ctr:              totalImpressions > 0 ? totalClicks / totalImpressions : null,
+    ctr:              totalImpressions > 0 ? totalLinkClicks / totalImpressions : null,
     cpm:              totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : null,
     cpl:              totalLeads > 0 ? totalSpend / totalLeads : null,
     cpc:              totalClicks > 0 ? totalSpend / totalClicks : null,

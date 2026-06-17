@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate } from '@/lib/utils'
 import { getClientLogo } from '@/lib/clientLogos'
+import { clientHasGa4, clientHasClarity } from '@/lib/clientFeatures'
 import type { Client } from '@/types/metrics'
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
   onClientChange:           (clientId: string) => void
   metaFondosUsd:            number | null
   metaFondosUpdatedAt:      string | null
+  googleAdsCustomerId:      string | null
   googleAdsFondosArs:       number | null
   googleAdsFondosUpdatedAt: string | null
 }
@@ -33,7 +35,7 @@ interface DateRange { from: string; to: string }
 
 export function DashboardView({
   clientId, clientName, clients, onClientChange,
-  metaFondosUsd, googleAdsFondosArs,
+  metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
 }: Props) {
   const logo  = getClientLogo(clientId)
   const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
@@ -101,7 +103,7 @@ export function DashboardView({
                 Meta · Fondos {formatCurrency(metaFondosUsd)}
               </span>
             )}
-            {googleAdsFondosArs !== null && (
+            {googleAdsCustomerId && googleAdsFondosArs !== null && googleAdsFondosArs > 0 && (
               <span className={[
                 'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
                 googleAdsFondosArs < 50_000
@@ -195,17 +197,23 @@ export function DashboardView({
         </CardContent>
       </Card>
 
-      {/* Sección Google Ads */}
-      <GoogleAdsSection clientId={clientId} from={range.from} to={range.to} />
+      {/* Sección Google Ads — solo si el cliente tiene Google Ads configurado */}
+      {googleAdsCustomerId && (
+        <GoogleAdsSection clientId={clientId} from={range.from} to={range.to} />
+      )}
 
       {/* Análisis IA */}
       <AiInsights clientId={clientId} />
 
-      {/* Sección GA4 */}
-      <Ga4Section clientId={clientId} from={range.from} to={range.to} />
+      {/* Sección GA4 — solo si el cliente tiene GA4 configurado */}
+      {clientHasGa4(clientId) && (
+        <Ga4Section clientId={clientId} from={range.from} to={range.to} />
+      )}
 
-      {/* Sección Clarity */}
-      <ClaritySection clientId={clientId} from={range.from} to={range.to} />
+      {/* Sección Clarity — solo si el cliente tiene Clarity configurado */}
+      {clientHasClarity(clientId) && (
+        <ClaritySection clientId={clientId} from={range.from} to={range.to} />
+      )}
 
     </div>
   )

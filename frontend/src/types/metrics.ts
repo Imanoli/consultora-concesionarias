@@ -5,6 +5,7 @@ export interface Client {
   active:                   boolean
   metaFondosUsd:            number | null
   metaFondosUpdatedAt:      string | null
+  googleAdsCustomerId:      string | null
   googleAdsFondosArs:       number | null
   googleAdsFondosUpdatedAt: string | null
 }
