@@ -26,7 +26,7 @@ export async function checkAlerts(
     return
   }
 
-  // Guardar fondos Meta en la DB
+  // Guardar fondos Meta en la DB (null si umbral no configurado)
   await prisma.client.update({
     where: { id: clientId },
     data: {
@@ -35,8 +35,8 @@ export async function checkAlerts(
     },
   })
 
-  // Obtener saldo Google Ads — usa el ID del cliente o el env var como fallback
-  const resolvedGadsId = googleAdsCustomerId ?? process.env.GOOGLE_ADS_CUSTOMER_ID
+  // Solo consultar Google Ads si el cliente tiene ID configurado (sin fallback global)
+  const resolvedGadsId = googleAdsCustomerId
   let gadsBalance: number | null = null
   if (resolvedGadsId) {
     try {
@@ -62,8 +62,8 @@ export async function checkAlerts(
 
   const alerts: string[] = []
 
-  // Alerta fondos Meta rojos
-  if (status.fondosDisponibles < META_RED_USD) {
+  // Alerta fondos Meta rojos (solo si el umbral está configurado)
+  if (status.fondosDisponibles !== null && status.fondosDisponibles < META_RED_USD) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">

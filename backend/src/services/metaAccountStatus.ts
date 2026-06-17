@@ -1,8 +1,8 @@
 import { createHmac } from 'crypto'
 
 export interface AccountStatus {
-  // fondosDisponibles = umbral_facturación - gasto_ciclo_actual (en USD)
-  fondosDisponibles: number
+  // fondosDisponibles = umbral_facturación - gasto_ciclo_actual (en USD). null si umbral no configurado.
+  fondosDisponibles: number | null
   currency:          string
   campaigns:         CampaignStatus[]
 }
@@ -58,9 +58,11 @@ export async function fetchAccountStatus(accountId?: string, clientId?: string):
   // balance = gasto acumulado en el ciclo actual (lo que se adeuda hasta ahora).
   // fondos disponibles = umbral - gasto_ciclo_actual.
   const balanceCents   = parseInt(String(balanceBody['balance'] ?? '0'), 10)
+  const suffix         = clientId?.toUpperCase()
   const thresholdKey   = suffix ? `META_BILLING_THRESHOLD_CENTS_${suffix}` : 'META_BILLING_THRESHOLD_CENTS'
   const thresholdCents = parseInt(process.env[thresholdKey] ?? process.env.META_BILLING_THRESHOLD_CENTS ?? '0', 10)
-  const fondosCents    = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : 0
+  // Si el umbral no está configurado (= 0), fondos = null (sin monitoreo)
+  const fondosCents    = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : null
 
   // Consulta de campañas activas/pausadas
   const campUrl = new URL(`${base}/${account}/campaigns`)
@@ -83,7 +85,7 @@ export async function fetchAccountStatus(accountId?: string, clientId?: string):
   }))
 
   return {
-    fondosDisponibles: fondosCents / 100,
+    fondosDisponibles: fondosCents !== null ? fondosCents / 100 : null,
     currency,
     campaigns,
   }

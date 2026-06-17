@@ -17,6 +17,8 @@ export async function fetchGoogleAdsBalance(customerId: string): Promise<number 
     ...(loginId ? { login_customer_id: loginId } : {}),
   })
 
+  // Sin WHERE de status: la librería no convierte el enum string correctamente.
+  // Filtramos status=3 (APPROVED) en JS.
   const results = await customer.query(`
     SELECT
       account_budget.adjusted_spending_limit_micros,
@@ -24,17 +26,24 @@ export async function fetchGoogleAdsBalance(customerId: string): Promise<number 
       account_budget.amount_served_micros,
       account_budget.status
     FROM account_budget
-    WHERE account_budget.status = 'APPROVED'
-    LIMIT 1
   `)
 
-  if (results.length === 0) return null
-  const budget    = (results[0] as any).account_budget
-  const limitType = String(budget?.adjusted_spending_limit_type ?? 'INFINITE')
-  if (limitType === 'INFINITE') return null
-  const limit  = Number(budget?.adjusted_spending_limit_micros ?? 0)
-  const served = Number(budget?.amount_served_micros ?? 0)
-  return Math.max(0, limit - served) / 1_000_000
+  const approved = results.filter((r: any) => r.account_budget?.status === 3)
+  if (approved.length === 0) return null
+
+  let totalRemaining = 0
+  for (const r of approved) {
+    const budget    = (r as any).account_budget
+    // Si adjusted_spending_limit_type está ausente o no es INFINITE, hay límite fijo
+    const limitType = String(budget?.adjusted_spending_limit_type ?? '')
+    if (limitType === '2' || limitType === 'INFINITE') continue
+    const limit  = Number(budget?.adjusted_spending_limit_micros ?? 0)
+    const served = Number(budget?.amount_served_micros ?? 0)
+    totalRemaining += Math.max(0, limit - served)
+  }
+
+  if (totalRemaining === 0) return null
+  return totalRemaining / 1_000_000
 }
 
 export interface GoogleAdsCampaignRow {
