@@ -19,7 +19,9 @@ export async function fetchGoogleAdsBalance(customerId: string): Promise<number>
 
   const results = await customer.query(`
     SELECT
-      account_budget.remaining_balance_micros,
+      account_budget.adjusted_spending_limit_micros,
+      account_budget.adjusted_spending_limit_type,
+      account_budget.amount_served_micros,
       account_budget.status
     FROM account_budget
     WHERE account_budget.status = 'APPROVED'
@@ -27,8 +29,12 @@ export async function fetchGoogleAdsBalance(customerId: string): Promise<number>
   `)
 
   if (results.length === 0) return 0
-  const micros = Number((results[0] as any).account_budget?.remaining_balance_micros ?? 0)
-  return micros / 1_000_000
+  const budget    = (results[0] as any).account_budget
+  const limitType = String(budget?.adjusted_spending_limit_type ?? 'INFINITE')
+  if (limitType === 'INFINITE') return 0
+  const limit  = Number(budget?.adjusted_spending_limit_micros ?? 0)
+  const served = Number(budget?.amount_served_micros ?? 0)
+  return Math.max(0, limit - served) / 1_000_000
 }
 
 export interface GoogleAdsCampaignRow {
