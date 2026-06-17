@@ -53,12 +53,18 @@ export async function fetchAccountStatus(accountId?: string): Promise<AccountSta
 
   const currency = String(balanceBody['currency'] ?? 'USD')
 
-  // balance = gasto acumulado del ciclo actual (en centavos).
-  // Meta es postpago: cobra cuando el gasto alcanza el umbral de facturación.
-  // "Fondos disponibles" = umbral - balance
-  const balanceCents   = parseInt(String(balanceBody['balance'] ?? '0'), 10)
-  const thresholdCents = parseInt(process.env.META_BILLING_THRESHOLD_CENTS ?? '0', 10)
-  const fondosCents    = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : 0
+  // funding_source_details.balance = crédito prepago disponible (en centavos).
+  // Si existe, la cuenta es prepaga y ese es el valor real.
+  // Si no existe, fallback postpago: umbral_facturación - gasto_ciclo_actual.
+  const fundingSource = balanceBody['funding_source_details'] as { balance?: string | number } | undefined
+  let fondosCents: number
+  if (fundingSource?.balance !== undefined) {
+    fondosCents = parseInt(String(fundingSource.balance), 10)
+  } else {
+    const balanceCents   = parseInt(String(balanceBody['balance'] ?? '0'), 10)
+    const thresholdCents = parseInt(process.env.META_BILLING_THRESHOLD_CENTS ?? '0', 10)
+    fondosCents = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : 0
+  }
 
   // Consulta de campañas activas/pausadas
   const campUrl = new URL(`${base}/${account}/campaigns`)
