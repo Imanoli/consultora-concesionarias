@@ -8,7 +8,7 @@ function getClient(): GoogleAdsApi {
   })
 }
 
-export async function fetchGoogleAdsBalance(customerId: string): Promise<number> {
+export async function fetchGoogleAdsBalance(customerId: string): Promise<number | null> {
   const client   = getClient()
   const loginId  = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID
   const customer = client.Customer({
@@ -28,10 +28,10 @@ export async function fetchGoogleAdsBalance(customerId: string): Promise<number>
     LIMIT 1
   `)
 
-  if (results.length === 0) return 0
+  if (results.length === 0) return null
   const budget    = (results[0] as any).account_budget
   const limitType = String(budget?.adjusted_spending_limit_type ?? 'INFINITE')
-  if (limitType === 'INFINITE') return 0
+  if (limitType === 'INFINITE') return null
   const limit  = Number(budget?.adjusted_spending_limit_micros ?? 0)
   const served = Number(budget?.amount_served_micros ?? 0)
   return Math.max(0, limit - served) / 1_000_000
