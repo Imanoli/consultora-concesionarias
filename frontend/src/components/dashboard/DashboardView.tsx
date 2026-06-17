@@ -24,8 +24,6 @@ interface Props {
   clientName:               string
   clients:                  Client[]
   onClientChange:           (clientId: string) => void
-  metaFondosUsd:            number | null
-  metaFondosUpdatedAt:      string | null
   googleAdsCustomerId:      string | null
   googleAdsFondosArs:       number | null
   googleAdsFondosUpdatedAt: string | null
@@ -35,7 +33,7 @@ interface DateRange { from: string; to: string }
 
 export function DashboardView({
   clientId, clientName, clients, onClientChange,
-  metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
+  googleAdsCustomerId, googleAdsFondosArs,
 }: Props) {
   const logo  = getClientLogo(clientId)
   const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
@@ -91,18 +89,6 @@ export function DashboardView({
             <p className="text-sm text-muted-foreground">
               Meta Ads · {formatDate(range.from)} – {formatDate(range.to)}
             </p>
-            {metaFondosUsd !== null && (
-              <span className={[
-                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                metaFondosUsd < 40
-                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                  : metaFondosUsd < 100
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-              ].join(' ')}>
-                Meta · Fondos {formatCurrency(metaFondosUsd)}
-              </span>
-            )}
             {googleAdsCustomerId && googleAdsFondosArs !== null && googleAdsFondosArs > 0 && (
               <span className={[
                 'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
