@@ -25,7 +25,8 @@ interface PeriodSums {
 }
 
 function computeKpis(s: PeriodSums) {
-  const ctrVal = s.impressions > 0 ? s.linkClicks / s.impressions : null
+  // CTR y CPC usan clicks totales (no linkClicks) para compatibilidad con Lead Ads
+  // donde inline_link_clicks=0 pero clicks reales existen
   return {
     spend:            s.spend,
     leads:            s.leads,
@@ -38,10 +39,10 @@ function computeKpis(s: PeriodSums) {
     sessions:         s.sessions,
     conversions:      s.conversions,
     frequency:        s.reach > 0 ? s.impressions / s.reach : null,
-    ctr:              ctrVal,
+    ctr:              s.impressions > 0 ? s.clicks / s.impressions : null,
     cpm:              s.impressions > 0 ? (s.spend / s.impressions) * 1000 : null,
     cpl:              s.leads > 0 ? s.spend / s.leads : null,
-    cpc:              s.linkClicks > 0 ? s.spend / s.linkClicks : null,
+    cpc:              s.clicks > 0 ? s.spend / s.clicks : null,
     cpr:              s.leads > 0 ? s.spend / s.leads : null,
     costPerFollower:  s.instagramFollows > 0 ? s.spend / s.instagramFollows : null,
     costPerPurchase:  s.purchases > 0 ? s.spend / s.purchases : null,
@@ -298,10 +299,10 @@ export async function metricsRoutes(app: FastifyInstance) {
           campaignName:     r.campaignName,
           spend, impressions, clicks, leads, reach, linkClicks, purchases, instagramFollows,
           frequency:        reach > 0 ? impressions / reach : null,
-          ctr:              impressions > 0 ? linkClicks / impressions : null,
+          ctr:              impressions > 0 ? clicks / impressions : null,
           cpm:              impressions > 0 ? (spend / impressions) * 1000 : null,
           cpl:              leads > 0 ? spend / leads : null,
-          cpc:              linkClicks > 0 ? spend / linkClicks : null,
+          cpc:              clicks > 0 ? spend / clicks : null,
           costPerFollower:  instagramFollows > 0 ? spend / instagramFollows : null,
           costPerPurchase:  purchases > 0 ? spend / purchases : null,
         }

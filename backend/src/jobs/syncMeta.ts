@@ -108,10 +108,10 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
     purchases:        totalPurchases,
     instagramFollows: totalInstagramFollows,
     frequency:        totalReach > 0 ? totalImpressions / totalReach : null,
-    ctr:              totalImpressions > 0 ? totalLinkClicks / totalImpressions : null,
+    ctr:              totalImpressions > 0 ? totalClicks / totalImpressions : null,
     cpm:              totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : null,
     cpl:              totalLeads > 0 ? totalSpend / totalLeads : null,
-    cpc:              totalLinkClicks > 0 ? totalSpend / totalLinkClicks : null,
+    cpc:              totalClicks > 0 ? totalSpend / totalClicks : null,
     rawData:          campaigns.map(c => c.id),
   }
 
