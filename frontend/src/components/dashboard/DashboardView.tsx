@@ -77,7 +77,7 @@ export function DashboardView({
               alt={clientName}
               width={280}
               height={80}
-              className="h-14 w-auto object-contain bg-white rounded-md px-3 py-2"
+              className="h-14 w-auto object-contain"
               priority
             />
           ) : (
