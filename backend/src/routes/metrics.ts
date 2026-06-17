@@ -25,8 +25,6 @@ interface PeriodSums {
 }
 
 function computeKpis(s: PeriodSums) {
-  // CTR y CPC usan clicks totales (no linkClicks) para compatibilidad con Lead Ads
-  // donde inline_link_clicks=0 pero clicks reales existen
   return {
     spend:            s.spend,
     leads:            s.leads,
@@ -39,7 +37,7 @@ function computeKpis(s: PeriodSums) {
     sessions:         s.sessions,
     conversions:      s.conversions,
     frequency:        s.reach > 0 ? s.impressions / s.reach : null,
-    ctr:              s.impressions > 0 ? s.clicks / s.impressions : null,
+    ctr:              s.impressions > 0 ? s.linkClicks / s.impressions : null,
     cpm:              s.impressions > 0 ? (s.spend / s.impressions) * 1000 : null,
     cpl:              s.leads > 0 ? s.spend / s.leads : null,
     cpc:              s.clicks > 0 ? s.spend / s.clicks : null,
@@ -299,7 +297,7 @@ export async function metricsRoutes(app: FastifyInstance) {
           campaignName:     r.campaignName,
           spend, impressions, clicks, leads, reach, linkClicks, purchases, instagramFollows,
           frequency:        reach > 0 ? impressions / reach : null,
-          ctr:              impressions > 0 ? clicks / impressions : null,
+          ctr:              impressions > 0 ? linkClicks / impressions : null,
           cpm:              impressions > 0 ? (spend / impressions) * 1000 : null,
           cpl:              leads > 0 ? spend / leads : null,
           cpc:              clicks > 0 ? spend / clicks : null,
