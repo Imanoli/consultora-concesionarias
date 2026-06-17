@@ -1,8 +1,10 @@
 import type { Client, MetricsResponse, DailyMetricsResponse, CampaignsResponse } from '@/types/metrics'
 
-// Dev: NEXT_PUBLIC_API_URL=http://localhost:3001 (directo al backend local)
-// Prod: BASE='/backend' → rewrites de Next.js enrutan /backend/* al VPS
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? '/backend'
+// Server-side (Vercel SSR): BACKEND_URL es absoluta y no necesita rewrite
+// Client-side (browser): NEXT_PUBLIC_API_URL o '/backend' → rewrite de Next.js al VPS
+const BASE = typeof window === 'undefined'
+  ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? '')
+  : (process.env.NEXT_PUBLIC_API_URL ?? '/backend')
 
 interface RangeParams {
   clientId: string

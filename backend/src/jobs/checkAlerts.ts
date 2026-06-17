@@ -42,20 +42,22 @@ export async function checkAlerts(
     try {
       gadsBalance = await fetchGoogleAdsBalance(resolvedGadsId)
       if (gadsBalance !== null) {
-        await prisma.client.update({
-          where: { id: clientId },
-          data: {
-            googleAdsFondosArs:       gadsBalance,
-            googleAdsFondosUpdatedAt: new Date(),
-          },
-        })
         log(`[alertas] Google Ads saldo (${clientName}): ARS ${gadsBalance.toFixed(2)}`)
       } else {
         log(`[alertas] Google Ads saldo no disponible via API (${clientName}) — cuenta con presupuesto ilimitado`)
       }
     } catch (err) {
       log(`[alertas] Error al consultar saldo Google Ads (${clientName}): ${err}`)
+      // gadsBalance queda null — se guarda null en la DB para limpiar valores viejos
     }
+    // Siempre guardar, incluso null (limpia valores obsoletos como el 0 de presupuesto ilimitado)
+    await prisma.client.update({
+      where: { id: clientId },
+      data: {
+        googleAdsFondosArs:       gadsBalance,
+        googleAdsFondosUpdatedAt: new Date(),
+      },
+    })
   }
 
   const alerts: string[] = []
