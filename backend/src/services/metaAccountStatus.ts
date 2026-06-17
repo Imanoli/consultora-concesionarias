@@ -14,13 +14,14 @@ export interface CampaignStatus {
   effectiveStatus:  string   // ACTIVE | PAUSED | WITH_ISSUES | etc.
 }
 
-function getEnv(accountId?: string) {
-  const token   = process.env.META_ACCESS_TOKEN
-  const secret  = process.env.META_APP_SECRET
+function getEnv(accountId?: string, clientId?: string) {
+  const suffix  = clientId?.toUpperCase()
+  const token   = (suffix && process.env[`META_ACCESS_TOKEN_${suffix}`]) || process.env.META_ACCESS_TOKEN
+  const secret  = (suffix && process.env[`META_APP_SECRET_${suffix}`])   || process.env.META_APP_SECRET
   const version = process.env.META_GRAPH_API_VERSION ?? 'v21.0'
   const account = accountId ?? process.env.META_AD_ACCOUNT_ID
   if (!token || !secret || !account) {
-    throw new Error('Faltan META_ACCESS_TOKEN, META_APP_SECRET o META_AD_ACCOUNT_ID')
+    throw new Error(`Faltan META_ACCESS_TOKEN, META_APP_SECRET o META_AD_ACCOUNT_ID para ${clientId ?? 'default'}`)
   }
   return { token, secret, version, account }
 }
@@ -35,8 +36,8 @@ function assertNoError(body: Record<string, unknown>): void {
   throw new Error(`Meta API error ${e.code}: ${e.message}`)
 }
 
-export async function fetchAccountStatus(accountId?: string): Promise<AccountStatus> {
-  const { token, secret, version, account } = getEnv(accountId)
+export async function fetchAccountStatus(accountId?: string, clientId?: string): Promise<AccountStatus> {
+  const { token, secret, version, account } = getEnv(accountId, clientId)
   const ap = proof(secret, token)
   const base = `https://graph.facebook.com/${version}`
 
@@ -53,18 +54,13 @@ export async function fetchAccountStatus(accountId?: string): Promise<AccountSta
 
   const currency = String(balanceBody['currency'] ?? 'USD')
 
-  // funding_source_details.balance = crédito prepago disponible (en centavos).
-  // Si existe, la cuenta es prepaga y ese es el valor real.
-  // Si no existe, fallback postpago: umbral_facturación - gasto_ciclo_actual.
-  const fundingSource = balanceBody['funding_source_details'] as { balance?: string | number } | undefined
-  let fondosCents: number
-  if (fundingSource?.balance !== undefined) {
-    fondosCents = parseInt(String(fundingSource.balance), 10)
-  } else {
-    const balanceCents   = parseInt(String(balanceBody['balance'] ?? '0'), 10)
-    const thresholdCents = parseInt(process.env.META_BILLING_THRESHOLD_CENTS ?? '0', 10)
-    fondosCents = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : 0
-  }
+  // Para cuentas con facturación por umbral:
+  // balance = gasto acumulado en el ciclo actual (lo que se adeuda hasta ahora).
+  // fondos disponibles = umbral - gasto_ciclo_actual.
+  const balanceCents   = parseInt(String(balanceBody['balance'] ?? '0'), 10)
+  const thresholdKey   = suffix ? `META_BILLING_THRESHOLD_CENTS_${suffix}` : 'META_BILLING_THRESHOLD_CENTS'
+  const thresholdCents = parseInt(process.env[thresholdKey] ?? process.env.META_BILLING_THRESHOLD_CENTS ?? '0', 10)
+  const fondosCents    = thresholdCents > 0 ? Math.max(0, thresholdCents - balanceCents) : 0
 
   // Consulta de campañas activas/pausadas
   const campUrl = new URL(`${base}/${account}/campaigns`)

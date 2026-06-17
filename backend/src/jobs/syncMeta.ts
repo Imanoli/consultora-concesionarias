@@ -39,7 +39,7 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
     return { date: targetDate, campaignsProcessed: 0, leadsTotal: 0, spendTotal: 0 }
   }
 
-  const insights = await fetchCampaignInsights(targetDate, client.metaAdAccountId)
+  const insights = await fetchCampaignInsights(targetDate, client.metaAdAccountId, clientId)
   if (insights.length === 0) {
     return { date: targetDate, campaignsProcessed: 0, leadsTotal: 0, spendTotal: 0 }
   }

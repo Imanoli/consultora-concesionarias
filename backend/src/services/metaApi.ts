@@ -43,12 +43,13 @@ interface MetaErrorBody {
   fbtrace_id?:    string
 }
 
-function requireEnv() {
-  const token   = process.env.META_ACCESS_TOKEN
-  const secret  = process.env.META_APP_SECRET
+function requireEnv(clientId?: string) {
+  const suffix  = clientId?.toUpperCase()
+  const token   = (suffix && process.env[`META_ACCESS_TOKEN_${suffix}`]) || process.env.META_ACCESS_TOKEN
+  const secret  = (suffix && process.env[`META_APP_SECRET_${suffix}`])   || process.env.META_APP_SECRET
   const version = process.env.META_GRAPH_API_VERSION ?? 'v21.0'
   if (!token || !secret) {
-    throw new Error('Faltan variables: META_ACCESS_TOKEN o META_APP_SECRET')
+    throw new Error(`Faltan variables: META_ACCESS_TOKEN${suffix ? `_${suffix}` : ''} o META_APP_SECRET${suffix ? `_${suffix}` : ''}`)
   }
   return { token, secret, version }
 }
@@ -88,8 +89,8 @@ function buildUrl(base: string, account: string, token: string, proof: string, d
   return u.toString()
 }
 
-export async function fetchCampaignInsights(date: string, accountId: string): Promise<MetaCampaignInsight[]> {
-  const { token, secret, version } = requireEnv()
+export async function fetchCampaignInsights(date: string, accountId: string, clientId?: string): Promise<MetaCampaignInsight[]> {
+  const { token, secret, version } = requireEnv(clientId)
   const proof   = computeProof(secret, token)
   const base    = `https://graph.facebook.com/${version}`
   const results: MetaCampaignInsight[] = []

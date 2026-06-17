@@ -1,27 +1,10 @@
-import { getClients } from '@/lib/api'
-import { DashboardClientWrapper } from '@/components/dashboard/DashboardClientWrapper'
-import type { Client } from '@/types/metrics'
+import { redirect } from 'next/navigation'
 
 interface Props {
   params: Promise<{ clientId: string }>
 }
 
-export default async function DashboardPage({ params }: Props) {
+export default async function DashboardClientRedirect({ params }: Props) {
   const { clientId } = await params
-  const clients      = await getClients().catch(() => [] as Client[])
-  const client       = clients.find(c => c.id === clientId)
-  const clientName   = client?.name ?? clientId
-
-  return (
-    <DashboardClientWrapper
-      clientId={clientId}
-      clientName={clientName}
-      metaFondosUsd={client?.metaFondosUsd ?? null}
-      metaFondosUpdatedAt={client?.metaFondosUpdatedAt ?? null}
-      googleAdsFondosArs={client?.googleAdsFondosArs ?? null}
-      googleAdsFondosUpdatedAt={client?.googleAdsFondosUpdatedAt ?? null}
-    />
-  )
+  redirect(`/dashboard?client=${clientId}`)
 }
-
-export const dynamic = 'force-dynamic'

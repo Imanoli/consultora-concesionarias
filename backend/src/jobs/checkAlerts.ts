@@ -20,7 +20,7 @@ export async function checkAlerts(
 ): Promise<void> {
   let status
   try {
-    status = await fetchAccountStatus(adAccountId)
+    status = await fetchAccountStatus(adAccountId, clientId)
   } catch (err) {
     log(`[alertas] Error al consultar estado de cuenta Meta (${clientName}): ${err}`)
     return

@@ -12,13 +12,17 @@ import { ClaritySection }    from './ClaritySection'
 import { Ga4Section }        from './Ga4Section'
 import { DateRangeControls } from './DateRangeControls'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate } from '@/lib/utils'
 import { getClientLogo } from '@/lib/clientLogos'
+import type { Client } from '@/types/metrics'
 
 interface Props {
   clientId:                 string
   clientName:               string
+  clients:                  Client[]
+  onClientChange:           (clientId: string) => void
   metaFondosUsd:            number | null
   metaFondosUpdatedAt:      string | null
   googleAdsFondosArs:       number | null
@@ -27,40 +31,61 @@ interface Props {
 
 interface DateRange { from: string; to: string }
 
-export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosUpdatedAt, googleAdsFondosArs, googleAdsFondosUpdatedAt }: Props) {
-  const logo = getClientLogo(clientId)
+export function DashboardView({
+  clientId, clientName, clients, onClientChange,
+  metaFondosUsd, googleAdsFondosArs,
+}: Props) {
+  const logo  = getClientLogo(clientId)
   const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
 
   const swrKey = [clientId, range.from, range.to] as const
 
-  const { data: metrics,  isLoading: lM, error: eM } =
-    useSWR([...swrKey, 'metrics'],  () => getMetrics({ clientId, from: range.from, to: range.to }))
+  const { data: metrics,   isLoading: lM, error: eM } =
+    useSWR([...swrKey, 'metrics'],    () => getMetrics({ clientId, from: range.from, to: range.to }))
 
-  const { data: daily,    isLoading: lD } =
-    useSWR([...swrKey, 'daily'],    () => getDailyMetrics({ clientId, from: range.from, to: range.to }))
+  const { data: daily,     isLoading: lD } =
+    useSWR([...swrKey, 'daily'],      () => getDailyMetrics({ clientId, from: range.from, to: range.to }))
 
   const { data: campaigns, isLoading: lC } =
-    useSWR([...swrKey, 'campaigns'], () => getCampaigns({ clientId, from: range.from, to: range.to }))
+    useSWR([...swrKey, 'campaigns'],  () => getCampaigns({ clientId, from: range.from, to: range.to }))
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
 
       {/* Encabezado */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+
+          {/* Selector de cliente */}
+          {clients.length > 1 && (
+            <Select value={clientId} onValueChange={onClientChange}>
+              <SelectTrigger className="w-auto min-w-[160px] h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* Logo o nombre del cliente */}
           {logo ? (
             <Image
               src={logo}
               alt={clientName}
               width={280}
               height={80}
-              className="h-16 w-auto object-contain bg-white rounded-md px-3 py-2"
+              className="h-14 w-auto object-contain bg-white rounded-md px-3 py-2"
               priority
             />
           ) : (
             <h1 className="text-xl font-bold">{clientName}</h1>
           )}
-          <div className="flex flex-wrap items-center gap-3 mt-0.5">
+
+          {/* Badges de fondos */}
+          <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-muted-foreground">
               Meta Ads · {formatDate(range.from)} – {formatDate(range.to)}
             </p>
@@ -90,6 +115,7 @@ export function DashboardView({ clientId, clientName, metaFondosUsd, metaFondosU
             )}
           </div>
         </div>
+
         <DateRangeControls onRange={setRange} />
       </div>
 
