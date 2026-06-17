@@ -35,11 +35,12 @@ export async function checkAlerts(
     },
   })
 
-  // Obtener saldo Google Ads si hay customer ID
+  // Obtener saldo Google Ads — usa el ID del cliente o el env var como fallback
+  const resolvedGadsId = googleAdsCustomerId ?? process.env.GOOGLE_ADS_CUSTOMER_ID
   let gadsBalance: number | null = null
-  if (googleAdsCustomerId) {
+  if (resolvedGadsId) {
     try {
-      gadsBalance = await fetchGoogleAdsBalance(googleAdsCustomerId)
+      gadsBalance = await fetchGoogleAdsBalance(resolvedGadsId)
       await prisma.client.update({
         where: { id: clientId },
         data: {
