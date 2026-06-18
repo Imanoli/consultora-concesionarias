@@ -17,6 +17,7 @@ import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate } from '@/lib/utils'
 import { getClientLogo } from '@/lib/clientLogos'
 import { clientHasGa4, clientHasClarity } from '@/lib/clientFeatures'
+import { FundLoadModal } from './FundLoadModal'
 import type { Client } from '@/types/metrics'
 
 interface Props {
@@ -44,7 +45,8 @@ export function DashboardView({
   metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
 }: Props) {
   const logo  = getClientLogo(clientId)
-  const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
+  const [range, setRange]         = useState<DateRange>(() => presetToRange('last_30d'))
+  const [metaModal, setMetaModal] = useState(false)
 
   const swrKey = [clientId, range.from, range.to] as const
 
@@ -117,8 +119,22 @@ export function DashboardView({
             Fondos USD {metaFondosUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         )}
+        <button
+          onClick={() => setMetaModal(true)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          + Cargar saldo
+        </button>
         <div className="flex-1 border-t border-border" />
       </div>
+
+      <FundLoadModal
+        open={metaModal}
+        clientId={clientId}
+        source="meta"
+        currency="USD"
+        onClose={() => setMetaModal(false)}
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

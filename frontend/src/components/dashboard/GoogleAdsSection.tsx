@@ -1,8 +1,10 @@
 'use client'
+import { useState } from 'react'
 import useSWR from 'swr'
-import { KpiCard }       from './KpiCard'
-import { LeadsChart }    from './LeadsChart'
+import { KpiCard }        from './KpiCard'
+import { LeadsChart }     from './LeadsChart'
 import { CampaignsTable } from './CampaignsTable'
+import { FundLoadModal }  from './FundLoadModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { formatCurrencyARS, formatNumber, formatPercent } from '@/lib/utils'
@@ -22,6 +24,7 @@ function fondosBadgeClass(value: number): string {
 }
 
 export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
+  const [modal, setModal] = useState(false)
   const key = [clientId, from, to, 'google_ads'] as const
 
   const { data: metrics,   isLoading: lM } =
@@ -31,7 +34,6 @@ export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
   const { data: campaigns, isLoading: lC } =
     useSWR([...key, 'campaigns'], () => getCampaigns({ clientId, source: 'google_ads', from, to }))
 
-  // No mostrar la sección si no hay datos
   if (!lM && (!metrics || metrics.current.impressions === 0)) return null
 
   return (
@@ -45,8 +47,22 @@ export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
             Fondos ARS {fondosArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
           </span>
         )}
+        <button
+          onClick={() => setModal(true)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          + Cargar saldo
+        </button>
         <div className="flex-1 border-t border-border" />
       </div>
+
+      <FundLoadModal
+        open={modal}
+        clientId={clientId}
+        source="google_ads"
+        currency="ARS"
+        onClose={() => setModal(false)}
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
