@@ -11,7 +11,7 @@ const GADS_RED_ARS    = 50_000
 async function calcFondos(clientId: string, source: 'meta' | 'google_ads'): Promise<number | null> {
   const latestLoad = await prisma.fundLoad.findFirst({
     where:   { clientId, source },
-    orderBy: { loadedAt: 'desc' },
+    orderBy: [{ loadedAt: 'desc' }, { id: 'desc' }],
   })
   if (!latestLoad) return null
 
