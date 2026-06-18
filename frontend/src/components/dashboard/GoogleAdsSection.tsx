@@ -8,12 +8,20 @@ import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { formatCurrencyARS, formatNumber, formatPercent } from '@/lib/utils'
 
 interface Props {
-  clientId: string
-  from:     string
-  to:       string
+  clientId:  string
+  from:      string
+  to:        string
+  fondosArs: number | null
 }
 
-export function GoogleAdsSection({ clientId, from, to }: Props) {
+function fondosBadgeClass(value: number): string {
+  const base = 'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium'
+  if (value < 50_000)  return `${base} bg-red-500/15 text-red-400 border-red-500/30`
+  if (value < 100_000) return `${base} bg-amber-500/15 text-amber-400 border-amber-500/30`
+  return `${base} bg-emerald-500/15 text-emerald-400 border-emerald-500/30`
+}
+
+export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
   const key = [clientId, from, to, 'google_ads'] as const
 
   const { data: metrics,   isLoading: lM } =
@@ -32,6 +40,11 @@ export function GoogleAdsSection({ clientId, from, to }: Props) {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           Google Ads · ARS
         </h2>
+        {fondosArs !== null && fondosArs > 0 && (
+          <span className={fondosBadgeClass(fondosArs)}>
+            Fondos ARS {fondosArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+          </span>
+        )}
         <div className="flex-1 border-t border-border" />
       </div>
 

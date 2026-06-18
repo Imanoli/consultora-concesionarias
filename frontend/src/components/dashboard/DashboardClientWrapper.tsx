@@ -44,6 +44,7 @@ function ClientDashboard() {
       clientName={activeClient.name}
       clients={clients}
       onClientChange={handleClientChange}
+      metaFondosUsd={activeClient.metaFondosUsd ?? null}
       googleAdsCustomerId={activeClient.googleAdsCustomerId ?? null}
       googleAdsFondosArs={activeClient.googleAdsFondosArs ?? null}
       googleAdsFondosUpdatedAt={activeClient.googleAdsFondosUpdatedAt ?? null}

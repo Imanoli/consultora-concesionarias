@@ -1,15 +1,28 @@
 import { fetchAccountStatus } from '../services/metaAccountStatus.js'
-import { fetchGoogleAdsBalance } from '../services/googleAdsApi.js'
 import { sendAlert } from '../services/email.js'
 import prisma from '../db/prisma.js'
 
 // Semáforo Meta (USD): verde >100, amarillo 40-99, rojo <40
 const META_RED_USD    = 40
-const META_YELLOW_USD = 100
 
 // Semáforo Google Ads (ARS): verde >100.000, amarillo 50.000-99.999, rojo <50.000
 const GADS_RED_ARS    = 50_000
-const GADS_YELLOW_ARS = 100_000
+
+async function calcFondos(clientId: string, source: 'meta' | 'google_ads'): Promise<number | null> {
+  const latestLoad = await prisma.fundLoad.findFirst({
+    where:   { clientId, source },
+    orderBy: { loadedAt: 'desc' },
+  })
+  if (!latestLoad) return null
+
+  const result = await prisma.dailyMetric.aggregate({
+    where: { clientId, source, date: { gte: latestLoad.loadedAt } },
+    _sum:  { spend: true },
+  })
+
+  const spent = Number(result._sum.spend ?? 0)
+  return Math.max(0, Number(latestLoad.amount) - spent)
+}
 
 export async function checkAlerts(
   clientId: string,
@@ -18,6 +31,7 @@ export async function checkAlerts(
   googleAdsCustomerId?: string,
   log: (msg: string) => void = console.log,
 ): Promise<void> {
+  // Estado de campañas Meta (solo para detectar campañas pausadas)
   let status
   try {
     status = await fetchAccountStatus(adAccountId, clientId)
@@ -26,57 +40,49 @@ export async function checkAlerts(
     return
   }
 
-  // Guardar fondos Meta en la DB (null si umbral no configurado)
+  // Calcular fondos desde fund_loads
+  const metaFondos = await calcFondos(clientId, 'meta')
+  const gadsFondos = googleAdsCustomerId ? await calcFondos(clientId, 'google_ads') : null
+
+  // Guardar en clients table
   await prisma.client.update({
     where: { id: clientId },
     data: {
-      metaFondosUsd:       status.fondosDisponibles,
+      metaFondosUsd:       metaFondos,
       metaFondosUpdatedAt: new Date(),
+      ...(googleAdsCustomerId ? {
+        googleAdsFondosArs:       gadsFondos,
+        googleAdsFondosUpdatedAt: new Date(),
+      } : {}),
     },
   })
 
-  // Solo consultar Google Ads si el cliente tiene ID configurado (sin fallback global)
-  const resolvedGadsId = googleAdsCustomerId
-  let gadsBalance: number | null = null
-  if (resolvedGadsId) {
-    try {
-      gadsBalance = await fetchGoogleAdsBalance(resolvedGadsId)
-      if (gadsBalance !== null) {
-        log(`[alertas] Google Ads saldo (${clientName}): ARS ${gadsBalance.toFixed(2)}`)
-      } else {
-        log(`[alertas] Google Ads saldo no disponible via API (${clientName}) — cuenta con presupuesto ilimitado`)
-      }
-    } catch (err) {
-      log(`[alertas] Error al consultar saldo Google Ads (${clientName}): ${err}`)
-      // gadsBalance queda null — se guarda null en la DB para limpiar valores viejos
-    }
-    // Siempre guardar, incluso null (limpia valores obsoletos como el 0 de presupuesto ilimitado)
-    await prisma.client.update({
-      where: { id: clientId },
-      data: {
-        googleAdsFondosArs:       gadsBalance,
-        googleAdsFondosUpdatedAt: new Date(),
-      },
-    })
+  if (metaFondos !== null) {
+    log(`[alertas] Meta fondos (${clientName}): $${metaFondos.toFixed(2)} ${status.currency}`)
+  } else {
+    log(`[alertas] Meta fondos (${clientName}): sin carga registrada`)
+  }
+  if (gadsFondos !== null) {
+    log(`[alertas] Google Ads fondos (${clientName}): ARS ${gadsFondos.toFixed(2)}`)
   }
 
   const alerts: string[] = []
 
-  // Alerta fondos Meta rojos (solo si el umbral está configurado)
-  if (status.fondosDisponibles !== null && status.fondosDisponibles < META_RED_USD) {
+  // Alerta fondos Meta rojos
+  if (metaFondos !== null && metaFondos < META_RED_USD) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">
           <strong style="color:#c0392b">🔴 Meta Ads — Fondos críticos</strong><br>
-          Fondos disponibles: <strong>$${status.fondosDisponibles.toFixed(2)} USD</strong><br>
+          Fondos disponibles: <strong>$${metaFondos.toFixed(2)} ${status.currency}</strong><br>
           Por debajo del umbral mínimo ($${META_RED_USD} USD). Recargá antes de que se pasen las campañas.
         </td>
       </tr>
     `)
-    log(`[alertas] Fondos bajos (${clientName}): $${status.fondosDisponibles.toFixed(2)} ${status.currency}`)
+    log(`[alertas] Meta fondos bajos (${clientName}): $${metaFondos.toFixed(2)} ${status.currency}`)
   }
 
-  // Alerta de campañas pausadas por Meta (status ACTIVE pero efectivamente PAUSED)
+  // Alerta campañas pausadas por Meta
   const pausedUnexpected = status.campaigns.filter(
     c => c.status === 'ACTIVE' && c.effectiveStatus === 'PAUSED'
   )
@@ -98,17 +104,17 @@ export async function checkAlerts(
   }
 
   // Alerta fondos Google Ads rojos
-  if (gadsBalance !== null && gadsBalance < GADS_RED_ARS) {
+  if (gadsFondos !== null && gadsFondos < GADS_RED_ARS) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">
           <strong style="color:#c0392b">🔴 Google Ads — Fondos críticos</strong><br>
-          Fondos disponibles: <strong>ARS ${gadsBalance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</strong><br>
+          Fondos disponibles: <strong>ARS ${gadsFondos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</strong><br>
           Por debajo del umbral mínimo (ARS 50.000). Recargá antes de que se pasen las campañas.
         </td>
       </tr>
     `)
-    log(`[alertas] Google Ads fondos bajos (${clientName}): ARS ${gadsBalance.toFixed(2)}`)
+    log(`[alertas] Google Ads fondos bajos (${clientName}): ARS ${gadsFondos.toFixed(2)}`)
   }
 
   if (alerts.length === 0) {
@@ -117,6 +123,8 @@ export async function checkAlerts(
   }
 
   const subject = `[${clientName}] ${alerts.length} alerta${alerts.length > 1 ? 's' : ''} en cuentas publicitarias`
+
+  const metaFondosStr = metaFondos !== null ? `$${metaFondos.toFixed(2)} ${status.currency}` : 'sin datos'
 
   const html = `
     <div style="font-family:sans-serif; max-width:600px; margin:0 auto; color:#333">
@@ -131,7 +139,7 @@ export async function checkAlerts(
       </table>
       <p style="margin-top:24px; font-size:12px; color:#999">
         Este mensaje fue enviado automáticamente por el Dashboard IRM.<br>
-        Fondos disponibles: $${status.fondosDisponibles.toFixed(2)} ${status.currency} |
+        Meta fondos: ${metaFondosStr} |
         Campañas activas: ${status.campaigns.filter(c => c.effectiveStatus === 'ACTIVE').length} |
         Pausadas: ${pausedByUser.length + pausedUnexpected.length}
       </p>

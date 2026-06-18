@@ -24,6 +24,7 @@ model Client {
   dailyMetrics         DailyMetric[]
   campaignMetricsDaily CampaignMetricDaily[]
   aiInsights           AiInsight[]
+  fundLoads            FundLoad[]
 
   @@map("clients")
 }
@@ -85,6 +86,21 @@ model CampaignMetricDaily {
 
   @@unique([clientId, source, campaignId, date])
   @@map("campaign_metrics_daily")
+}
+
+model FundLoad {
+  id        Int      @id @default(autoincrement())
+  clientId  String   @map("client_id")
+  source    String   @db.VarChar(20)
+  amount    Decimal  @db.Decimal(12, 2)
+  currency  String   @db.VarChar(5)
+  loadedAt  DateTime @map("loaded_at") @db.DateTime(0)
+  notes     String?  @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  client    Client   @relation(fields: [clientId], references: [id])
+
+  @@map("fund_loads")
 }
 
 model AiInsight {

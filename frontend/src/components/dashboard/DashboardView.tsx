@@ -24,6 +24,7 @@ interface Props {
   clientName:               string
   clients:                  Client[]
   onClientChange:           (clientId: string) => void
+  metaFondosUsd:            number | null
   googleAdsCustomerId:      string | null
   googleAdsFondosArs:       number | null
   googleAdsFondosUpdatedAt: string | null
@@ -31,9 +32,16 @@ interface Props {
 
 interface DateRange { from: string; to: string }
 
+function fondosBadgeClass(value: number, red: number, yellow: number): string {
+  const base = 'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium'
+  if (value < red)    return `${base} bg-red-500/15 text-red-400 border-red-500/30`
+  if (value < yellow) return `${base} bg-amber-500/15 text-amber-400 border-amber-500/30`
+  return `${base} bg-emerald-500/15 text-emerald-400 border-emerald-500/30`
+}
+
 export function DashboardView({
   clientId, clientName, clients, onClientChange,
-  googleAdsCustomerId, googleAdsFondosArs,
+  metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
 }: Props) {
   const logo  = getClientLogo(clientId)
   const [range, setRange] = useState<DateRange>(() => presetToRange('last_30d'))
@@ -84,24 +92,9 @@ export function DashboardView({
             <h1 className="text-xl font-bold">{clientName}</h1>
           )}
 
-          {/* Badges de fondos */}
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-muted-foreground">
-              Meta Ads · {formatDate(range.from)} – {formatDate(range.to)}
-            </p>
-            {googleAdsCustomerId && googleAdsFondosArs !== null && googleAdsFondosArs > 0 && (
-              <span className={[
-                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                googleAdsFondosArs < 50_000
-                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                  : googleAdsFondosArs < 100_000
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-              ].join(' ')}>
-                Google · Fondos ARS {googleAdsFondosArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
-              </span>
-            )}
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Meta Ads · {formatDate(range.from)} – {formatDate(range.to)}
+          </p>
         </div>
 
         <DateRangeControls onRange={setRange} />
@@ -119,6 +112,11 @@ export function DashboardView({
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           Meta Ads · USD
         </h2>
+        {metaFondosUsd !== null && metaFondosUsd > 0 && (
+          <span className={fondosBadgeClass(metaFondosUsd, 40, 100)}>
+            Fondos USD {metaFondosUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        )}
         <div className="flex-1 border-t border-border" />
       </div>
 
@@ -185,7 +183,12 @@ export function DashboardView({
 
       {/* Sección Google Ads — solo si el cliente tiene Google Ads configurado */}
       {googleAdsCustomerId && (
-        <GoogleAdsSection clientId={clientId} from={range.from} to={range.to} />
+        <GoogleAdsSection
+          clientId={clientId}
+          from={range.from}
+          to={range.to}
+          fondosArs={googleAdsFondosArs}
+        />
       )}
 
       {/* Análisis IA */}
