@@ -114,7 +114,7 @@ function buildEmailHtml(clientName: string, date: string, insights: Awaited<Retu
       </td>
     </tr>`).join('')
 
-  const logoUrl    = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/logos/esac.jpg`
+  const logoUrl    = `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/logos/esac.png`
   const dashUrl    = process.env.FRONTEND_URL ?? 'http://localhost:3000'
 
   const balanceAlerts = balanceWarnings.map(w => `
