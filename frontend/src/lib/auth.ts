@@ -1,8 +1,20 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
-// Para auth: ruteamos por el rewrite de Vercel en vez de llamar al backend directo
-const BACKEND = (process.env.NEXTAUTH_URL ?? 'http://localhost:3000') + '/backend'
+interface ClientUser {
+  email:    string
+  password: string
+  role:     string
+  clientId: string | null
+}
+
+function getClientUsers(): ClientUser[] {
+  try {
+    return JSON.parse(process.env.CLIENT_USERS_JSON ?? '[]') as ClientUser[]
+  } catch {
+    return []
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -15,7 +27,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email    = credentials.email    as string
         const password = credentials.password as string
 
-        // Fallback admin por env vars (por si el backend no responde)
+        // Admin por env vars
         if (
           email    === process.env.AUTH_USER_EMAIL &&
           password === process.env.AUTH_USER_PASSWORD
@@ -23,19 +35,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return { id: '0', email, name: email, role: 'admin', clientId: null }
         }
 
-        try {
-          const res = await fetch(`${BACKEND}/api/auth/verify`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email, password }),
-          })
-          if (!res.ok) return null
-          const user = await res.json() as { id: number; email: string; role: string; clientId: string | null }
-          return { id: String(user.id), email: user.email, name: user.email, role: user.role, clientId: user.clientId }
-        } catch (err) {
-          console.error('[auth] Error al verificar credenciales:', err)
-          return null
+        // Usuarios cliente por env var CLIENT_USERS_JSON
+        const clientUsers = getClientUsers()
+        const match = clientUsers.find(u => u.email === email && u.password === password)
+        if (match) {
+          return { id: match.email, email: match.email, name: match.email, role: match.role, clientId: match.clientId }
         }
+
+        return null
       },
     }),
   ],
