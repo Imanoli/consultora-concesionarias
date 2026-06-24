@@ -5,6 +5,7 @@ import { syncRoutes } from './routes/sync.js'
 import { metricsRoutes } from './routes/metrics.js'
 import { fundLoadRoutes } from './routes/fundLoads.js'
 import { authVerifyRoutes } from './routes/authVerify.js'
+import { revenueRoutes } from './routes/revenue.js'
 import { startCron } from './cron/index.js'
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10)
@@ -30,6 +31,7 @@ async function main() {
   await app.register(metricsRoutes)
   await app.register(fundLoadRoutes)
   await app.register(authVerifyRoutes)
+  await app.register(revenueRoutes)
   startCron(app)
 
   app.get('/health', async () => ({

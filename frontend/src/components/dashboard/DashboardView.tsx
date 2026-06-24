@@ -19,6 +19,7 @@ import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate 
 import { getClientLogo } from '@/lib/clientLogos'
 import { clientHasGa4, clientHasClarity } from '@/lib/clientFeatures'
 import { FundLoadModal } from './FundLoadModal'
+import { RoasSection }   from './RoasSection'
 import type { Client } from '@/types/metrics'
 
 interface Props {
@@ -221,6 +222,13 @@ export function DashboardView({
           isAdmin={isAdmin}
         />
       )}
+
+      {/* ROAS mensual */}
+      <RoasSection
+        clientId={clientId}
+        googleAdsCustomerId={googleAdsCustomerId}
+        isAdmin={isAdmin}
+      />
 
       {/* Análisis IA — solo admin */}
       {isAdmin && <AiInsights clientId={clientId} />}

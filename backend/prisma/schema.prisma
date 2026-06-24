@@ -26,6 +26,7 @@ model Client {
   aiInsights           AiInsight[]
   fundLoads            FundLoad[]
   users                User[]
+  revenueEntries       RevenueEntry[]
 
   @@map("clients")
 }
@@ -115,6 +116,23 @@ model FundLoad {
   client    Client   @relation(fields: [clientId], references: [id])
 
   @@map("fund_loads")
+}
+
+model RevenueEntry {
+  id          Int      @id @default(autoincrement())
+  clientId    String   @map("client_id")
+  year        Int
+  month       Int
+  amountArs   Decimal  @map("amount_ars")  @db.Decimal(15, 2)
+  usdArsRate  Decimal  @map("usd_ars_rate") @db.Decimal(8, 2)
+  notes       String?  @db.VarChar(200)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt        @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, year, month])
+  @@map("revenue_entries")
 }
 
 model AiInsight {

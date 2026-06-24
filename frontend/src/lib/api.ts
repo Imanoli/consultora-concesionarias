@@ -95,3 +95,38 @@ export async function getGa4DailyMetrics(p: RangeParams): Promise<DailyMetricsRe
     to:       p.to,
   })
 }
+
+export interface RevenueEntry {
+  amountArs:  number | null
+  usdArsRate: number | null
+  notes:      string | null
+}
+
+export async function getRevenue(p: { clientId: string; year: number; month: number }): Promise<RevenueEntry> {
+  return apiFetch<RevenueEntry>('/api/revenue', {
+    clientId: p.clientId,
+    year:     String(p.year),
+    month:    String(p.month),
+  })
+}
+
+export async function saveRevenue(p: {
+  clientId:   string
+  year:       number
+  month:      number
+  amountArs:  number
+  usdArsRate: number
+  notes?:     string
+}): Promise<{ ok: boolean }> {
+  const url = `${BASE}/api/revenue`
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(p),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(body.error ?? `Error ${res.status}`)
+  }
+  return res.json() as Promise<{ ok: boolean }>
+}
