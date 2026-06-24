@@ -27,6 +27,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email    = credentials.email    as string
         const password = credentials.password as string
 
+        console.log('[auth] login attempt:', email)
+        console.log('[auth] CLIENT_USERS_JSON present:', !!process.env.CLIENT_USERS_JSON)
+
         // Admin por env vars
         if (
           email    === process.env.AUTH_USER_EMAIL &&
@@ -37,7 +40,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Usuarios cliente por env var CLIENT_USERS_JSON
         const clientUsers = getClientUsers()
+        console.log('[auth] client users count:', clientUsers.length)
+        console.log('[auth] client emails:', clientUsers.map(u => u.email))
+
         const match = clientUsers.find(u => u.email === email && u.password === password)
+        console.log('[auth] match found:', !!match)
+
         if (match) {
           return { id: match.email, email: match.email, name: match.email, role: match.role, clientId: match.clientId }
         }
