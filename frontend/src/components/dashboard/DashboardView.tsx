@@ -19,7 +19,8 @@ import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate 
 import { getClientLogo } from '@/lib/clientLogos'
 import { clientHasGa4, clientHasClarity } from '@/lib/clientFeatures'
 import { FundLoadModal } from './FundLoadModal'
-import { RoasSection }   from './RoasSection'
+import { RoasSection }              from './RoasSection'
+import { MonthlyComparisonTable }  from './MonthlyComparisonTable'
 import type { Client } from '@/types/metrics'
 
 interface Props {
@@ -222,6 +223,20 @@ export function DashboardView({
           isAdmin={isAdmin}
         />
       )}
+
+      {/* Comparativo mensual */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Histórico mensual
+          </h2>
+          <div className="flex-1 border-t border-border" />
+        </div>
+        <MonthlyComparisonTable clientId={clientId} source="meta"       title="Meta Ads · USD" />
+        {googleAdsCustomerId && (
+          <MonthlyComparisonTable clientId={clientId} source="google_ads" title="Google Ads · ARS" />
+        )}
+      </div>
 
       {/* ROAS mensual */}
       <RoasSection

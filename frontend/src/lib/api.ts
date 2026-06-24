@@ -110,6 +110,31 @@ export async function getRevenue(p: { clientId: string; year: number; month: num
   })
 }
 
+export interface MonthlyMetric {
+  year:             number
+  month:            number
+  spend:            number
+  impressions:      number
+  clicks:           number
+  leads:            number
+  reach:            number
+  linkClicks:       number
+  purchases:        number
+  instagramFollows: number
+  ctr:              number | null
+  cpm:              number | null
+  cpl:              number | null
+  cpc:              number | null
+}
+
+export async function getMonthlyMetrics(p: { clientId: string; source: string; months?: number }): Promise<MonthlyMetric[]> {
+  return apiFetch<MonthlyMetric[]>('/api/metrics/monthly', {
+    clientId: p.clientId,
+    source:   p.source,
+    months:   String(p.months ?? 12),
+  })
+}
+
 export async function saveRevenue(p: {
   clientId:   string
   year:       number

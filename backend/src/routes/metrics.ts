@@ -264,6 +264,64 @@ export async function metricsRoutes(app: FastifyInstance) {
     }
   })
 
+  // GET /api/metrics/monthly — agrega por mes los últimos N meses
+  app.get('/api/metrics/monthly', async (request, reply) => {
+    const { clientId, source, months } = request.query as Record<string, string>
+    if (!clientId) return reply.status(400).send({ error: 'clientId requerido' })
+
+    const src   = source ?? 'meta'
+    const limit = Math.min(parseInt(months ?? '12', 10), 24)
+
+    type Row = {
+      year: number; month: number
+      spend: string; impressions: bigint; clicks: bigint; leads: bigint
+      reach: bigint; linkClicks: bigint; purchases: bigint; instagramFollows: bigint
+    }
+
+    const rows = await prisma.$queryRaw<Row[]>`
+      SELECT
+        YEAR(date)              AS year,
+        MONTH(date)             AS month,
+        SUM(spend)              AS spend,
+        SUM(impressions)        AS impressions,
+        SUM(clicks)             AS clicks,
+        SUM(leads)              AS leads,
+        SUM(reach)              AS reach,
+        SUM(link_clicks)        AS linkClicks,
+        SUM(purchases)          AS purchases,
+        SUM(instagram_follows)  AS instagramFollows
+      FROM daily_metrics
+      WHERE client_id = ${clientId} AND source = ${src}
+      GROUP BY YEAR(date), MONTH(date)
+      ORDER BY YEAR(date) DESC, MONTH(date) DESC
+      LIMIT ${limit}
+    `
+
+    return rows.map(r => {
+      const spend       = Number(r.spend ?? 0)
+      const impressions = Number(r.impressions ?? 0)
+      const clicks      = Number(r.clicks ?? 0)
+      const leads       = Number(r.leads ?? 0)
+      const linkClicks  = Number(r.linkClicks ?? 0)
+      return {
+        year:             r.year,
+        month:            r.month,
+        spend,
+        impressions,
+        clicks,
+        leads,
+        reach:            Number(r.reach ?? 0),
+        linkClicks,
+        purchases:        Number(r.purchases ?? 0),
+        instagramFollows: Number(r.instagramFollows ?? 0),
+        ctr:  impressions > 0 ? linkClicks / impressions : null,
+        cpm:  impressions > 0 ? (spend / impressions) * 1000 : null,
+        cpl:  leads > 0       ? spend / leads : null,
+        cpc:  clicks > 0      ? spend / clicks : null,
+      }
+    })
+  })
+
   app.get('/api/campaigns', async (request, reply) => {
     const parsed = querySchema.safeParse(request.query)
     if (!parsed.success) {
