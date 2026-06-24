@@ -41,7 +41,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Usuarios cliente por env var CLIENT_USERS_JSON
         const clientUsers = getClientUsers()
         console.log('[auth] client users count:', clientUsers.length)
-        console.log('[auth] client emails:', clientUsers.map(u => u.email))
+
+        // Diagnóstico: comparación exacta carácter a carácter
+        for (const u of clientUsers) {
+          const emailMatch = u.email === email
+          const pwMatch    = u.password === password
+          console.log(`[auth] user "${u.email}": emailMatch=${emailMatch} pwMatch=${pwMatch} pwLen=${u.password.length} inputLen=${password.length}`)
+          if (!pwMatch) {
+            // Mostrar primeros y últimos chars sin exponer toda la contraseña
+            console.log(`[auth] pw stored[0]="${u.password[0]}" input[0]="${password[0]}"`)
+            console.log(`[auth] pw stored[-1]="${u.password[u.password.length-1]}" input[-1]="${password[password.length-1]}"`)
+          }
+        }
 
         const match = clientUsers.find(u => u.email === email && u.password === password)
         console.log('[auth] match found:', !!match)
