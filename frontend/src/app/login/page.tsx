@@ -21,7 +21,7 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError(`Error: ${result.error} | ok: ${result.ok} | status: ${result.status}`)
+      setError('Usuario o contraseña incorrectos')
     } else {
       router.push('/dashboard')
       router.refresh()

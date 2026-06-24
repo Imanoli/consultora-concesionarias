@@ -1,21 +1,6 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
-interface ClientUser {
-  email:    string
-  password: string
-  role:     string
-  clientId: string | null
-}
-
-function getClientUsers(): ClientUser[] {
-  try {
-    return JSON.parse(process.env.CLIENT_USERS_JSON ?? '[]') as ClientUser[]
-  } catch {
-    return []
-  }
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -24,41 +9,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: 'Contraseña', type: 'password' },
       },
       async authorize(credentials) {
-        const email    = credentials.email    as string
-        const password = credentials.password as string
+        const email    = ((credentials.email    as string) ?? '').trim()
+        const password = ((credentials.password as string) ?? '').trim()
 
-        console.log('[auth] login attempt:', email)
-        console.log('[auth] CLIENT_USERS_JSON present:', !!process.env.CLIENT_USERS_JSON)
-
-        // Admin por env vars
+        // Admin
         if (
-          email    === process.env.AUTH_USER_EMAIL &&
-          password === process.env.AUTH_USER_PASSWORD
+          email    === (process.env.AUTH_USER_EMAIL    ?? '').trim() &&
+          password === (process.env.AUTH_USER_PASSWORD ?? '').trim()
         ) {
           return { id: '0', email, name: email, role: 'admin', clientId: null }
         }
 
-        // Usuarios cliente por env var CLIENT_USERS_JSON
-        const clientUsers = getClientUsers()
-        console.log('[auth] client users count:', clientUsers.length)
-
-        // Diagnóstico: comparación exacta carácter a carácter
-        for (const u of clientUsers) {
-          const emailMatch = u.email === email
-          const pwMatch    = u.password === password
-          console.log(`[auth] user "${u.email}": emailMatch=${emailMatch} pwMatch=${pwMatch} pwLen=${u.password.length} inputLen=${password.length}`)
-          if (!pwMatch) {
-            // Mostrar primeros y últimos chars sin exponer toda la contraseña
-            console.log(`[auth] pw stored[0]="${u.password[0]}" input[0]="${password[0]}"`)
-            console.log(`[auth] pw stored[-1]="${u.password[u.password.length-1]}" input[-1]="${password[password.length-1]}"`)
+        // Usuarios cliente: CLIENT_1_EMAIL / CLIENT_1_PASSWORD / CLIENT_1_CLIENT_ID, etc.
+        for (let i = 1; i <= 20; i++) {
+          const uEmail    = (process.env[`CLIENT_${i}_EMAIL`]     ?? '').trim()
+          const uPassword = (process.env[`CLIENT_${i}_PASSWORD`]  ?? '').trim()
+          const uClientId = (process.env[`CLIENT_${i}_CLIENT_ID`] ?? '').trim() || null
+          if (!uEmail) break
+          if (email === uEmail && password === uPassword) {
+            return { id: uEmail, email: uEmail, name: uEmail, role: 'client', clientId: uClientId }
           }
-        }
-
-        const match = clientUsers.find(u => u.email === email && u.password === password)
-        console.log('[auth] match found:', !!match)
-
-        if (match) {
-          return { id: match.email, email: match.email, name: match.email, role: match.role, clientId: match.clientId }
         }
 
         return null
