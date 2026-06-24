@@ -14,6 +14,7 @@ interface Props {
   from:      string
   to:        string
   fondosArs: number | null
+  isAdmin:   boolean
 }
 
 function fondosBadgeClass(value: number): string {
@@ -23,7 +24,7 @@ function fondosBadgeClass(value: number): string {
   return `${base} bg-emerald-500/15 text-emerald-400 border-emerald-500/30`
 }
 
-export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
+export function GoogleAdsSection({ clientId, from, to, fondosArs, isAdmin }: Props) {
   const [modal, setModal] = useState(false)
   const key = [clientId, from, to, 'google_ads'] as const
 
@@ -47,22 +48,26 @@ export function GoogleAdsSection({ clientId, from, to, fondosArs }: Props) {
             Fondos ARS {fondosArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
           </span>
         )}
-        <button
-          onClick={() => setModal(true)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-        >
-          + Cargar saldo
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setModal(true)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+          >
+            + Cargar saldo
+          </button>
+        )}
         <div className="flex-1 border-t border-border" />
       </div>
 
-      <FundLoadModal
-        open={modal}
-        clientId={clientId}
-        source="google_ads"
-        currency="ARS"
-        onClose={() => setModal(false)}
-      />
+      {isAdmin && (
+        <FundLoadModal
+          open={modal}
+          clientId={clientId}
+          source="google_ads"
+          currency="ARS"
+          onClose={() => setModal(false)}
+        />
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

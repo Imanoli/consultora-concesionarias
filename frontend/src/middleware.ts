@@ -11,7 +11,9 @@ export default auth(function middleware(req) {
   }
   // Redirigir usuario ya autenticado fuera del login
   if (isLoggedIn && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard/esac', req.url))
+    const clientId = (req.auth as any)?.user?.clientId as string | null
+    const target   = clientId ? `/dashboard/${clientId}` : '/dashboard'
+    return NextResponse.redirect(new URL(target, req.url))
   }
 })
 

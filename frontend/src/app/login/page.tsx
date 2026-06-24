@@ -21,9 +21,9 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError('Email o contraseña incorrectos')
+      setError('Usuario o contraseña incorrectos')
     } else {
-      router.push('/dashboard/esac')
+      router.push('/dashboard')
       router.refresh()
     }
   }
@@ -42,14 +42,14 @@ export default function LoginPage() {
         >
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              Usuario
             </label>
             <input
               id="email"
               name="email"
-              type="email"
+              type="text"
               required
-              autoComplete="email"
+              autoComplete="username"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>

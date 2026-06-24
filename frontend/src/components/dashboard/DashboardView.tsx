@@ -25,6 +25,7 @@ interface Props {
   clientName:               string
   clients:                  Client[]
   onClientChange:           (clientId: string) => void
+  isAdmin:                  boolean
   metaFondosUsd:            number | null
   googleAdsCustomerId:      string | null
   googleAdsFondosArs:       number | null
@@ -42,7 +43,7 @@ function fondosBadgeClass(value: number, red: number, yellow: number): string {
 
 export function DashboardView({
   clientId, clientName, clients, onClientChange,
-  metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
+  isAdmin, metaFondosUsd, googleAdsCustomerId, googleAdsFondosArs,
 }: Props) {
   const logo  = getClientLogo(clientId)
   const [range, setRange]         = useState<DateRange>(() => presetToRange('last_30d'))
@@ -66,8 +67,8 @@ export function DashboardView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
 
-          {/* Selector de cliente */}
-          {clients.length > 1 && (
+          {/* Selector de cliente — solo admin con múltiples clientes */}
+          {isAdmin && clients.length > 1 && (
             <Select value={clientId} onValueChange={onClientChange}>
               <SelectTrigger className="w-auto min-w-[160px] h-8 text-sm">
                 <SelectValue />
@@ -119,22 +120,26 @@ export function DashboardView({
             Fondos USD {metaFondosUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         )}
-        <button
-          onClick={() => setMetaModal(true)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-        >
-          + Cargar saldo
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setMetaModal(true)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+          >
+            + Cargar saldo
+          </button>
+        )}
         <div className="flex-1 border-t border-border" />
       </div>
 
-      <FundLoadModal
-        open={metaModal}
-        clientId={clientId}
-        source="meta"
-        currency="USD"
-        onClose={() => setMetaModal(false)}
-      />
+      {isAdmin && (
+        <FundLoadModal
+          open={metaModal}
+          clientId={clientId}
+          source="meta"
+          currency="USD"
+          onClose={() => setMetaModal(false)}
+        />
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -197,26 +202,27 @@ export function DashboardView({
         </CardContent>
       </Card>
 
-      {/* Sección Google Ads — solo si el cliente tiene Google Ads configurado */}
+      {/* Sección Google Ads */}
       {googleAdsCustomerId && (
         <GoogleAdsSection
           clientId={clientId}
           from={range.from}
           to={range.to}
           fondosArs={googleAdsFondosArs}
+          isAdmin={isAdmin}
         />
       )}
 
-      {/* Análisis IA */}
-      <AiInsights clientId={clientId} />
+      {/* Análisis IA — solo admin */}
+      {isAdmin && <AiInsights clientId={clientId} />}
 
-      {/* Sección GA4 — solo si el cliente tiene GA4 configurado */}
-      {clientHasGa4(clientId) && (
+      {/* GA4 — solo admin */}
+      {isAdmin && clientHasGa4(clientId) && (
         <Ga4Section clientId={clientId} from={range.from} to={range.to} />
       )}
 
-      {/* Sección Clarity — solo si el cliente tiene Clarity configurado */}
-      {clientHasClarity(clientId) && (
+      {/* Clarity — solo admin */}
+      {isAdmin && clientHasClarity(clientId) && (
         <ClaritySection clientId={clientId} from={range.from} to={range.to} />
       )}
 

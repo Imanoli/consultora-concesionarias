@@ -10,13 +10,22 @@ const DashboardView = dynamic(
   { ssr: false }
 )
 
-function ClientDashboard() {
+interface Props {
+  isAdmin:         boolean
+  sessionClientId: string | null
+}
+
+function ClientDashboard({ isAdmin, sessionClientId }: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const { data: clients = [], isLoading } = useSWR('clients', getClients)
 
-  const paramId     = searchParams.get('client')
-  const activeClient = (paramId && clients.find(c => c.id === paramId)) || clients[0] || null
+  const visibleClients = isAdmin ? clients : clients.filter(c => c.id === sessionClientId)
+
+  const paramId      = isAdmin ? searchParams.get('client') : null
+  const activeClient = (paramId && visibleClients.find(c => c.id === paramId))
+    || visibleClients[0]
+    || null
 
   function handleClientChange(newId: string) {
     router.replace(`/dashboard?client=${newId}`, { scroll: false })
@@ -42,8 +51,9 @@ function ClientDashboard() {
     <DashboardView
       clientId={activeClient.id}
       clientName={activeClient.name}
-      clients={clients}
+      clients={isAdmin ? clients : []}
       onClientChange={handleClientChange}
+      isAdmin={isAdmin}
       metaFondosUsd={activeClient.metaFondosUsd ?? null}
       googleAdsCustomerId={activeClient.googleAdsCustomerId ?? null}
       googleAdsFondosArs={activeClient.googleAdsFondosArs ?? null}
@@ -52,14 +62,14 @@ function ClientDashboard() {
   )
 }
 
-export function DashboardClientWrapper() {
+export function DashboardClientWrapper({ isAdmin, sessionClientId }: Props) {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
         Cargando...
       </div>
     }>
-      <ClientDashboard />
+      <ClientDashboard isAdmin={isAdmin} sessionClientId={sessionClientId} />
     </Suspense>
   )
 }
