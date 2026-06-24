@@ -15,16 +15,17 @@ export function toDateString(d: Date): string {
   return d.toISOString().split('T')[0]
 }
 
-export type DatePreset = 'today' | 'yesterday' | 'last_7d' | 'last_30d' | 'this_month' | 'last_month'
+export type DatePreset = 'today' | 'yesterday' | 'last_7d' | 'last_15d' | 'last_30d' | 'this_month' | 'last_month'
 
 export const PRESETS: { value: DatePreset | 'custom'; label: string }[] = [
-  { value: 'today',      label: 'Hoy'            },
-  { value: 'yesterday',  label: 'Ayer'            },
-  { value: 'last_7d',    label: 'Últimos 7 días'  },
-  { value: 'last_30d',   label: 'Últimos 30 días' },
-  { value: 'this_month', label: 'Mes actual'      },
-  { value: 'last_month', label: 'Mes anterior'    },
-  { value: 'custom',     label: 'Personalizado'   },
+  { value: 'today',      label: 'Hoy'             },
+  { value: 'yesterday',  label: 'Ayer'             },
+  { value: 'last_7d',    label: 'Últimos 7 días'   },
+  { value: 'last_15d',   label: 'Últimos 15 días'  },
+  { value: 'last_30d',   label: 'Últimos 30 días'  },
+  { value: 'this_month', label: 'Mes actual'       },
+  { value: 'last_month', label: 'Mes anterior'     },
+  { value: 'custom',     label: 'Personalizado'    },
 ]
 
 export function presetToRange(preset: DatePreset): { from: string; to: string } {
@@ -41,6 +42,8 @@ export function presetToRange(preset: DatePreset): { from: string; to: string } 
     }
     case 'last_7d':
       return { from: toDateString(ago(7)),  to: toDateString(ago(1)) }
+    case 'last_15d':
+      return { from: toDateString(ago(15)), to: toDateString(ago(1)) }
     case 'last_30d':
       return { from: toDateString(ago(30)), to: toDateString(ago(1)) }
     case 'this_month': {
