@@ -1,4 +1,5 @@
 import { fetchAccountStatus } from '../services/metaAccountStatus.js'
+import { fetchGoogleAdsCampaignStatus } from '../services/googleAdsApi.js'
 import { sendAlert } from '../services/email.js'
 import prisma from '../db/prisma.js'
 
@@ -105,8 +106,18 @@ export async function checkAlerts(
     log(`[alertas] Campañas pausadas (${clientName}): ${pausedUnexpected.map(c => c.name).join(', ')}`)
   }
 
-  // Alerta fondos Google Ads rojos
-  if (gadsFondos !== null && gadsFondos < GADS_RED_ARS) {
+  // Alerta fondos Google Ads rojos — solo si hay campañas activas
+  let gadsActiveCampaigns = 0
+  if (googleAdsCustomerId && gadsFondos !== null && gadsFondos < GADS_RED_ARS) {
+    try {
+      const gadsStatus = await fetchGoogleAdsCampaignStatus(googleAdsCustomerId)
+      gadsActiveCampaigns = gadsStatus.filter(c => c.status === 'ENABLED').length
+    } catch (err) {
+      log(`[alertas] Error al consultar estado campañas Google Ads (${clientName}): ${err}`)
+    }
+  }
+
+  if (gadsFondos !== null && gadsFondos < GADS_RED_ARS && gadsActiveCampaigns > 0) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">

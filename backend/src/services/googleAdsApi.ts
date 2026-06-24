@@ -65,6 +65,36 @@ export class GoogleAdsApiError extends Error {
   }
 }
 
+export interface GoogleAdsCampaignStatus {
+  campaignId:   string
+  campaignName: string
+  status:       string  // 'ENABLED' | 'PAUSED' | 'REMOVED'
+}
+
+export async function fetchGoogleAdsCampaignStatus(
+  customerId: string,
+): Promise<GoogleAdsCampaignStatus[]> {
+  const client   = getClient()
+  const loginId  = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID
+  const customer = client.Customer({
+    customer_id:   customerId,
+    refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN!,
+    ...(loginId ? { login_customer_id: loginId } : {}),
+  })
+
+  const results = await customer.query(`
+    SELECT campaign.id, campaign.name, campaign.status
+    FROM campaign
+    WHERE campaign.status != 'REMOVED'
+  `)
+
+  return results.map(r => ({
+    campaignId:   String(r.campaign?.id ?? ''),
+    campaignName: String(r.campaign?.name ?? ''),
+    status:       String(r.campaign?.status ?? ''),
+  }))
+}
+
 export async function fetchGoogleAdsCampaigns(
   customerId: string,
   date: string,
