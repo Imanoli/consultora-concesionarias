@@ -68,8 +68,10 @@ export async function checkAlerts(
 
   const alerts: string[] = []
 
-  // Alerta fondos Meta rojos
-  if (metaFondos !== null && metaFondos < META_RED_USD) {
+  const activeCampaigns = status.campaigns.filter(c => c.effectiveStatus === 'ACTIVE')
+
+  // Alerta fondos Meta rojos — solo si hay campañas activas corriendo
+  if (metaFondos !== null && metaFondos < META_RED_USD && activeCampaigns.length > 0) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">
@@ -79,7 +81,7 @@ export async function checkAlerts(
         </td>
       </tr>
     `)
-    log(`[alertas] Meta fondos bajos (${clientName}): $${metaFondos.toFixed(2)} ${status.currency}`)
+    log(`[alertas] Meta fondos bajos — campañas activas: ${activeCampaigns.length} (${clientName}): $${metaFondos.toFixed(2)} ${status.currency}`)
   }
 
   // Alerta campañas pausadas por Meta
