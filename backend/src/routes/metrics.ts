@@ -304,8 +304,8 @@ export async function metricsRoutes(app: FastifyInstance) {
       const leads       = Number(r.leads ?? 0)
       const linkClicks  = Number(r.linkClicks ?? 0)
       return {
-        year:             r.year,
-        month:            r.month,
+        year:             Number(r.year),
+        month:            Number(r.month),
         spend,
         impressions,
         clicks,
