@@ -241,7 +241,6 @@ export function DashboardView({
       {/* ROAS mensual */}
       <RoasSection
         clientId={clientId}
-        googleAdsCustomerId={googleAdsCustomerId}
         isAdmin={isAdmin}
       />
 

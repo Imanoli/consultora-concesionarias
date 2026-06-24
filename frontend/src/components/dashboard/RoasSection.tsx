@@ -15,42 +15,33 @@ function monthRange(year: number, month: number) {
 }
 
 interface Props {
-  clientId:            string
-  googleAdsCustomerId: string | null
-  isAdmin:             boolean
+  clientId: string
+  isAdmin:  boolean
 }
 
-export function RoasSection({ clientId, googleAdsCustomerId, isAdmin }: Props) {
+export function RoasSection({ clientId, isAdmin }: Props) {
   const now = new Date()
   const [year,  setYear]  = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [modal, setModal] = useState(false)
 
   const { from, to } = monthRange(year, month)
-  const revenueKey = ['revenue', clientId, year, month]
 
   const { data: revenue, mutate: mutateRevenue } = useSWR(
-    revenueKey,
+    ['revenue', clientId, year, month],
     () => getRevenue({ clientId, year, month })
   )
-  const { data: metaMetrics }   = useSWR(
-    ['roas-meta',  clientId, from, to],
-    () => getMetrics({ clientId, source: 'meta',       from, to })
-  )
-  const { data: gadsMetrics }   = useSWR(
-    googleAdsCustomerId ? ['roas-gads', clientId, from, to] : null,
-    () => getMetrics({ clientId, source: 'google_ads', from, to })
+  const { data: metaMetrics } = useSWR(
+    ['roas-meta', clientId, from, to],
+    () => getMetrics({ clientId, source: 'meta', from, to })
   )
 
-  const amountArs  = revenue?.amountArs  ?? null
-  const usdArsRate = revenue?.usdArsRate ?? null
-  const metaSpendUsd  = metaMetrics?.current.spend  ?? 0
-  const gadsSpendArs  = gadsMetrics?.current.spend  ?? 0
-  const totalSpendArs = usdArsRate
-    ? metaSpendUsd * usdArsRate + gadsSpendArs
-    : gadsSpendArs
+  const amountArs     = revenue?.amountArs  ?? null
+  const usdArsRate    = revenue?.usdArsRate ?? null
+  const metaSpendUsd  = metaMetrics?.current.spend ?? 0
+  const totalSpendArs = usdArsRate ? metaSpendUsd * usdArsRate : null
 
-  const roas = amountArs && totalSpendArs > 0
+  const roas = amountArs && totalSpendArs && totalSpendArs > 0
     ? amountArs / totalSpendArs
     : null
 
@@ -102,7 +93,7 @@ export function RoasSection({ clientId, googleAdsCustomerId, isAdmin }: Props) {
         <CardContent className="px-4 pb-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label="Facturación" value={amountArs ? `$${amountArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : '—'} />
-            <Stat label="Inversión total" value={totalSpendArs > 0 ? `$${totalSpendArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : '—'} />
+            <Stat label="Inversión Meta (ARS)" value={totalSpendArs ? `$${totalSpendArs.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : '—'} />
             <Stat label="ROAS" value={roas ? `${roas.toFixed(2)}x` : '—'} highlight={roas !== null} />
             <Stat label="TC USD/ARS" value={usdArsRate ? `$${usdArsRate.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : '—'} />
           </div>
