@@ -1,7 +1,8 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
-const BACKEND = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+// Para auth: ruteamos por el rewrite de Vercel en vez de llamar al backend directo
+const BACKEND = (process.env.NEXTAUTH_URL ?? 'http://localhost:3000') + '/backend'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
