@@ -13,6 +13,7 @@ import { Ga4Section }        from './Ga4Section'
 import { DateRangeControls } from './DateRangeControls'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { signOut } from 'next-auth/react'
 import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
 import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate } from '@/lib/utils'
 import { getClientLogo } from '@/lib/clientLogos'
@@ -100,7 +101,15 @@ export function DashboardView({
           </p>
         </div>
 
-        <DateRangeControls onRange={setRange} />
+        <div className="flex items-center gap-3">
+          <DateRangeControls onRange={setRange} />
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Salir
+          </button>
+        </div>
       </div>
 
       {/* Error */}
