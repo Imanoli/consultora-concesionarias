@@ -1,6 +1,21 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
+interface ClientUser {
+  email:    string
+  password: string
+  role:     string
+  clientId: string | null
+}
+
+function getClientUsers(): ClientUser[] {
+  try {
+    return JSON.parse(process.env.CLIENT_USERS_JSON ?? '[]') as ClientUser[]
+  } catch {
+    return []
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -20,15 +35,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return { id: '0', email, name: email, role: 'admin', clientId: null }
         }
 
-        // Usuarios cliente: CLIENT_1_EMAIL / CLIENT_1_PASSWORD / CLIENT_1_CLIENT_ID, etc.
-        for (let i = 1; i <= 20; i++) {
-          const uEmail    = (process.env[`CLIENT_${i}_EMAIL`]     ?? '').trim()
-          const uPassword = (process.env[`CLIENT_${i}_PASSWORD`]  ?? '').trim()
-          const uClientId = (process.env[`CLIENT_${i}_CLIENT_ID`] ?? '').trim() || null
-          if (!uEmail) break
-          if (email === uEmail && password === uPassword) {
-            return { id: uEmail, email: uEmail, name: uEmail, role: 'client', clientId: uClientId }
-          }
+        // Usuarios cliente desde CLIENT_USERS_JSON
+        const match = getClientUsers().find(
+          u => u.email.trim() === email && u.password.trim() === password
+        )
+        if (match) {
+          return { id: match.email, email: match.email, name: match.email, role: match.role, clientId: match.clientId }
         }
 
         return null
