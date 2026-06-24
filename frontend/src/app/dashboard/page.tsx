@@ -8,8 +8,9 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  const isAdmin        = (session.user as any).role === 'admin'
-  const sessionClientId = (session.user as any).clientId as string | null
+  const role            = (session.user as any)?.role as string | undefined
+  const isAdmin         = role !== 'client'   // sin role = admin (backward compat)
+  const sessionClientId = (session.user as any)?.clientId as string | null ?? null
 
   return <DashboardClientWrapper isAdmin={isAdmin} sessionClientId={sessionClientId} />
 }
