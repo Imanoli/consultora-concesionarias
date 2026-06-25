@@ -303,7 +303,8 @@ export async function metricsRoutes(app: FastifyInstance) {
     let rows: Row[]
 
     if (objective) {
-      // Filtra por objetivo de campaña
+      // Filtra por uno o varios objetivos de campaña (comma-separated)
+      const objectives = objective.split(',').map(s => s.trim()).filter(Boolean)
       rows = await prisma.$queryRaw<Row[]>`
         SELECT
           YEAR(date)              AS year,
@@ -319,7 +320,7 @@ export async function metricsRoutes(app: FastifyInstance) {
         FROM campaign_metrics_daily
         WHERE client_id = ${clientId}
           AND source    = ${src}
-          AND objective = ${objective}
+          AND objective IN (${Prisma.join(objectives)})
         GROUP BY YEAR(date), MONTH(date)
         ORDER BY YEAR(date) DESC, MONTH(date) DESC
         LIMIT ${limit}

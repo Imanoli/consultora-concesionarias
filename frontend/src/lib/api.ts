@@ -127,13 +127,13 @@ export interface MonthlyMetric {
   cpc:              number | null
 }
 
-export async function getMonthlyMetrics(p: { clientId: string; source: string; months?: number; objective?: string }): Promise<MonthlyMetric[]> {
+export async function getMonthlyMetrics(p: { clientId: string; source: string; months?: number; objectives?: string[] }): Promise<MonthlyMetric[]> {
   const params: Record<string, string> = {
     clientId: p.clientId,
     source:   p.source,
     months:   String(p.months ?? 12),
   }
-  if (p.objective) params.objective = p.objective
+  if (p.objectives && p.objectives.length > 0) params.objective = p.objectives.join(',')
   return apiFetch<MonthlyMetric[]>('/api/metrics/monthly', params)
 }
 

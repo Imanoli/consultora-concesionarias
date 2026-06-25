@@ -52,7 +52,7 @@ function buildCols(source: string): ColDef[] {
 interface Props { clientId: string; source: 'meta' | 'google_ads'; title: string }
 
 export function MonthlyComparisonTable({ clientId, source, title }: Props) {
-  const [selectedObjective, setSelectedObjective] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const { data: campaigns = [] } = useSWR(
@@ -60,19 +60,32 @@ export function MonthlyComparisonTable({ clientId, source, title }: Props) {
     () => getAllCampaigns({ clientId, source })
   )
 
-  const { data, isLoading } = useSWR(
-    ['monthly', clientId, source, selectedObjective ?? ''],
-    () => getMonthlyMetrics({ clientId, source, months: 12, objective: selectedObjective ?? undefined })
-  )
-
-  // Objetivos únicos disponibles en las campañas
   const objectives = Array.from(new Set(campaigns.map(c => c.objective).filter(Boolean))) as string[]
+  const activeObjectives = selected.size > 0 ? Array.from(selected) : undefined
+
+  const { data, isLoading } = useSWR(
+    ['monthly', clientId, source, Array.from(selected).sort().join(',')],
+    () => getMonthlyMetrics({ clientId, source, months: 12, objectives: activeObjectives })
+  )
 
   const cols = buildCols(source)
 
-  if (!isLoading && (!data || data.length === 0) && !selectedObjective) return null
+  if (!isLoading && (!data || data.length === 0) && selected.size === 0) return null
 
-  const filterLabel = selectedObjective ? objectiveLabel(selectedObjective) : 'Todos los objetivos'
+  function toggleObjective(obj: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(obj)) next.delete(obj)
+      else next.add(obj)
+      return next
+    })
+  }
+
+  const filterLabel = selected.size === 0
+    ? 'Todos los objetivos'
+    : selected.size === 1
+      ? objectiveLabel(Array.from(selected)[0])
+      : `${selected.size} objetivos`
 
   return (
     <div className="space-y-2">
@@ -83,25 +96,29 @@ export function MonthlyComparisonTable({ clientId, source, title }: Props) {
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(v => !v)}
-              className="text-xs text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-1 transition-colors"
+              className={`text-xs border border-border rounded-md px-2 py-1 transition-colors ${selected.size > 0 ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {filterLabel} ▾
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-7 z-20 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
+              <div className="absolute right-0 top-7 z-20 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[190px]">
                 <button
-                  onClick={() => { setSelectedObjective(null); setDropdownOpen(false) }}
-                  className={`w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors ${!selectedObjective ? 'font-medium' : ''}`}
+                  onClick={() => { setSelected(new Set()); setDropdownOpen(false) }}
+                  className={`w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors ${selected.size === 0 ? 'font-medium' : ''}`}
                 >
                   Todos los objetivos
                 </button>
+                <div className="border-t border-border my-1" />
                 {objectives.map(obj => (
                   <button
                     key={obj}
-                    onClick={() => { setSelectedObjective(obj); setDropdownOpen(false) }}
-                    className={`w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors ${selectedObjective === obj ? 'font-medium' : ''}`}
+                    onClick={() => toggleObjective(obj)}
+                    className="w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors flex items-center gap-2"
                   >
+                    <span className={`w-3 h-3 rounded-sm border flex-shrink-0 flex items-center justify-center ${selected.has(obj) ? 'bg-foreground border-foreground' : 'border-border'}`}>
+                      {selected.has(obj) && <span className="text-background text-[9px] leading-none">✓</span>}
+                    </span>
                     {objectiveLabel(obj)}
                   </button>
                 ))}
