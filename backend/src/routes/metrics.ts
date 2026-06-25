@@ -265,13 +265,13 @@ export async function metricsRoutes(app: FastifyInstance) {
     }
   })
 
-  // GET /api/campaigns/all?clientId=X&source=meta — todas las campañas históricas
+  // GET /api/campaigns/all?clientId=X&source=meta — todas las campañas históricas con objetivo
   app.get('/api/campaigns/all', async (request, reply) => {
     const { clientId, source } = request.query as Record<string, string>
     if (!clientId) return reply.status(400).send({ error: 'clientId requerido' })
 
     const rows = await prisma.campaignMetricDaily.groupBy({
-      by:      ['campaignId', 'campaignName'],
+      by:      ['campaignId', 'campaignName', 'objective'],
       where:   { clientId, source: source ?? 'meta' },
       _sum:    { spend: true },
       orderBy: { _sum: { spend: 'desc' } },
@@ -280,13 +280,14 @@ export async function metricsRoutes(app: FastifyInstance) {
     return rows.map(r => ({
       campaignId:   r.campaignId,
       campaignName: r.campaignName,
+      objective:    r.objective ?? null,
     }))
   })
 
   // GET /api/metrics/monthly — agrega por mes los últimos N meses
   // Parámetro opcional: campaignIds=id1,id2  → filtra desde campaign_metrics_daily
   app.get('/api/metrics/monthly', async (request, reply) => {
-    const { clientId, source, months, campaignIds } = request.query as Record<string, string>
+    const { clientId, source, months, campaignIds, objective } = request.query as Record<string, string>
     if (!clientId) return reply.status(400).send({ error: 'clientId requerido' })
 
     const src   = source ?? 'meta'
@@ -301,11 +302,32 @@ export async function metricsRoutes(app: FastifyInstance) {
 
     let rows: Row[]
 
-    if (campaignIds) {
+    if (objective) {
+      // Filtra por objetivo de campaña
+      rows = await prisma.$queryRaw<Row[]>`
+        SELECT
+          YEAR(date)              AS year,
+          MONTH(date)             AS month,
+          SUM(spend)              AS spend,
+          SUM(impressions)        AS impressions,
+          SUM(clicks)             AS clicks,
+          SUM(leads)              AS leads,
+          SUM(reach)              AS reach,
+          SUM(link_clicks)        AS linkClicks,
+          SUM(purchases)          AS purchases,
+          SUM(instagram_follows)  AS instagramFollows
+        FROM campaign_metrics_daily
+        WHERE client_id = ${clientId}
+          AND source    = ${src}
+          AND objective = ${objective}
+        GROUP BY YEAR(date), MONTH(date)
+        ORDER BY YEAR(date) DESC, MONTH(date) DESC
+        LIMIT ${limit}
+      `
+    } else if (campaignIds) {
       const ids = campaignIds.split(',').filter(Boolean)
       if (ids.length === 0) return []
 
-      // Filtra por campañas específicas desde campaign_metrics_daily
       rows = await prisma.$queryRaw<Row[]>`
         SELECT
           YEAR(date)              AS year,

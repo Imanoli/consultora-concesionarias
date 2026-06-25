@@ -1,5 +1,5 @@
 import prisma from '../db/prisma.js'
-import { fetchCampaignInsights, MetaCampaignInsight, MetaAction } from '../services/metaApi.js'
+import { fetchCampaignInsights, fetchCampaignObjectives, MetaCampaignInsight, MetaAction } from '../services/metaApi.js'
 import { yesterdayArgentina } from '../utils/dates.js'
 
 export interface SyncResult {
@@ -39,13 +39,16 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
     return { date: targetDate, campaignsProcessed: 0, leadsTotal: 0, spendTotal: 0 }
   }
 
-  const insights = await fetchCampaignInsights(targetDate, client.metaAdAccountId, clientId)
+  const [insights, objectivesMap] = await Promise.all([
+    fetchCampaignInsights(targetDate, client.metaAdAccountId, clientId),
+    fetchCampaignObjectives(client.metaAdAccountId, clientId).catch(() => new Map<string, string>()),
+  ])
   if (insights.length === 0) {
     return { date: targetDate, campaignsProcessed: 0, leadsTotal: 0, spendTotal: 0 }
   }
 
   type CampaignRow = {
-    id: string; name: string
+    id: string; name: string; objective: string | null
     spend: number; impressions: number; clicks: number; leads: number
     reach: number; linkClicks: number; purchases: number; instagramFollows: number
     frequency: number | null
@@ -73,8 +76,9 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
     }
 
     campaigns.push({
-      id:    insight.campaign_id,
-      name:  insight.campaign_name,
+      id:        insight.campaign_id,
+      name:      insight.campaign_name,
+      objective: objectivesMap.get(insight.campaign_id) ?? null,
       spend, impressions, clicks, leads, reach, linkClicks, purchases, instagramFollows,
       frequency,
       // CTR de clic en enlace: inline_link_clicks / impressions (no el CTR general de Meta)
@@ -122,14 +126,14 @@ export async function syncMetaForClient(clientId: string, date?: string): Promis
       prisma.campaignMetricDaily.upsert({
         where:  { clientId_source_campaignId_date: { clientId, source: 'meta', campaignId: c.id, date: dateObj } },
         update: {
-          campaignName: c.name,
+          campaignName: c.name, objective: c.objective,
           spend: c.spend, impressions: c.impressions, clicks: c.clicks, leads: c.leads,
           reach: c.reach, linkClicks: c.linkClicks, purchases: c.purchases, instagramFollows: c.instagramFollows,
           frequency: c.frequency, ctr: c.ctr, cpm: c.cpm, cpl: c.cpl, cpc: c.cpc,
           rawData: c.raw as object,
         },
         create: {
-          clientId, source: 'meta', campaignId: c.id, campaignName: c.name, date: dateObj,
+          clientId, source: 'meta', campaignId: c.id, campaignName: c.name, objective: c.objective, date: dateObj,
           spend: c.spend, impressions: c.impressions, clicks: c.clicks, leads: c.leads,
           reach: c.reach, linkClicks: c.linkClicks, purchases: c.purchases, instagramFollows: c.instagramFollows,
           frequency: c.frequency, ctr: c.ctr, cpm: c.cpm, cpl: c.cpl, cpc: c.cpc,

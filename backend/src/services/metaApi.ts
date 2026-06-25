@@ -112,3 +112,29 @@ export async function fetchCampaignInsights(date: string, accountId: string, cli
 
   return results
 }
+
+export interface MetaCampaignInfo {
+  id:        string
+  name:      string
+  objective: string
+}
+
+export async function fetchCampaignObjectives(accountId: string, clientId?: string): Promise<Map<string, string>> {
+  const { token, secret, version } = requireEnv(clientId)
+  const proof = computeProof(secret, token)
+  const base  = `https://graph.facebook.com/${version}`
+
+  const map = new Map<string, string>()
+  let url: string | null = `${base}/${accountId}/campaigns?fields=id,objective&limit=200&appsecret_proof=${proof}&access_token=${token}`
+
+  while (url) {
+    const res  = await fetch(url)
+    const body = await res.json() as Record<string, unknown>
+    assertNoError(body)
+    const page = body as { data: MetaCampaignInfo[]; paging?: { next?: string } }
+    for (const c of page.data ?? []) map.set(c.id, c.objective)
+    url = page.paging?.next ?? null
+  }
+
+  return map
+}

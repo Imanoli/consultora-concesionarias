@@ -79,6 +79,7 @@ model CampaignMetricDaily {
   source           String   @db.VarChar(30)
   campaignId       String   @map("campaign_id") @db.VarChar(50)
   campaignName     String   @map("campaign_name") @db.VarChar(200)
+  objective        String?  @db.VarChar(60)
   date             DateTime @db.Date
   spend            Decimal  @default(0) @db.Decimal(10, 2)
   impressions      Int      @default(0)

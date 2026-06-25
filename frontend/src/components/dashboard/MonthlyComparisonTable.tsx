@@ -5,28 +5,35 @@ import { getMonthlyMetrics, getAllCampaigns, type MonthlyMetric } from '@/lib/ap
 
 const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
-function label(r: MonthlyMetric) {
-  return `${MONTHS[r.month - 1]} ${r.year}`
+// Traducciones de objetivos Meta → español
+const OBJECTIVE_LABELS: Record<string, string> = {
+  OUTCOME_TRAFFIC:       'Tráfico',
+  OUTCOME_ENGAGEMENT:    'Interacción',
+  OUTCOME_SALES:         'Ventas',
+  OUTCOME_LEADS:         'Leads',
+  OUTCOME_AWARENESS:     'Reconocimiento',
+  OUTCOME_APP_PROMOTION: 'App',
+  LINK_CLICKS:           'Tráfico',
+  POST_ENGAGEMENT:       'Interacción',
+  CONVERSIONS:           'Conversiones',
+  LEAD_GENERATION:       'Generación de leads',
+}
+
+function objectiveLabel(obj: string | null): string {
+  if (!obj) return 'Sin objetivo'
+  return OBJECTIVE_LABELS[obj] ?? obj
 }
 
 function fmtCurrency(v: number) {
   return v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-
 function fmtPct(v: number | null) {
   if (v === null) return '—'
   return `${(v * 100).toFixed(2)}%`
 }
+function fmtNum(v: number) { return v.toLocaleString('es-AR') }
 
-function fmtNum(v: number) {
-  return v.toLocaleString('es-AR')
-}
-
-interface ColDef {
-  key:    keyof MonthlyMetric
-  header: string
-  fmt:    (v: number | null) => string
-}
+interface ColDef { key: keyof MonthlyMetric; header: string; fmt: (v: number | null) => string }
 
 function buildCols(source: string): ColDef[] {
   const currency = source === 'meta' ? 'USD' : 'ARS'
@@ -42,15 +49,11 @@ function buildCols(source: string): ColDef[] {
   ]
 }
 
-interface Props {
-  clientId: string
-  source:   'meta' | 'google_ads'
-  title:    string
-}
+interface Props { clientId: string; source: 'meta' | 'google_ads'; title: string }
 
 export function MonthlyComparisonTable({ clientId, source, title }: Props) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [filterOpen,  setFilterOpen]  = useState(false)
+  const [selectedObjective, setSelectedObjective] = useState<string | null>(null)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const { data: campaigns = [] } = useSWR(
     ['campaigns-all', clientId, source],
@@ -58,68 +61,50 @@ export function MonthlyComparisonTable({ clientId, source, title }: Props) {
   )
 
   const { data, isLoading } = useSWR(
-    ['monthly', clientId, source, selectedIds.join(',')],
-    () => getMonthlyMetrics({ clientId, source, months: 12, campaignIds: selectedIds.length > 0 ? selectedIds : undefined })
+    ['monthly', clientId, source, selectedObjective ?? ''],
+    () => getMonthlyMetrics({ clientId, source, months: 12, objective: selectedObjective ?? undefined })
   )
+
+  // Objetivos únicos disponibles en las campañas
+  const objectives = Array.from(new Set(campaigns.map(c => c.objective).filter(Boolean))) as string[]
 
   const cols = buildCols(source)
 
-  if (!isLoading && (!data || data.length === 0)) return null
+  if (!isLoading && (!data || data.length === 0) && !selectedObjective) return null
 
-  function toggleCampaign(id: string) {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
-  function clearFilter() {
-    setSelectedIds([])
-    setFilterOpen(false)
-  }
-
-  const filterLabel = selectedIds.length === 0
-    ? 'Todas las campañas'
-    : `${selectedIds.length} campaña${selectedIds.length > 1 ? 's' : ''} seleccionada${selectedIds.length > 1 ? 's' : ''}`
+  const filterLabel = selectedObjective ? objectiveLabel(selectedObjective) : 'Todos los objetivos'
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</h3>
 
-        {campaigns.length > 0 && (
+        {objectives.length > 0 && (
           <div className="relative">
             <button
-              onClick={() => setFilterOpen(v => !v)}
+              onClick={() => setDropdownOpen(v => !v)}
               className="text-xs text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-1 transition-colors"
             >
               {filterLabel} ▾
             </button>
 
-            {filterOpen && (
-              <div className="absolute right-0 top-7 z-20 bg-background border border-border rounded-lg shadow-lg p-3 min-w-[240px] space-y-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium">Filtrar campañas</span>
-                  <button onClick={clearFilter} className="text-xs text-muted-foreground hover:text-foreground">
-                    Limpiar
-                  </button>
-                </div>
-                {campaigns.map(c => (
-                  <label key={c.campaignId} className="flex items-start gap-2 cursor-pointer hover:bg-muted/30 rounded px-1 py-0.5">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(c.campaignId)}
-                      onChange={() => toggleCampaign(c.campaignId)}
-                      className="mt-0.5 shrink-0"
-                    />
-                    <span className="text-xs leading-tight">{c.campaignName}</span>
-                  </label>
-                ))}
+            {dropdownOpen && (
+              <div className="absolute right-0 top-7 z-20 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
                 <button
-                  onClick={() => setFilterOpen(false)}
-                  className="mt-2 w-full text-xs bg-blue-600 text-white rounded-md py-1 hover:bg-blue-700 transition-colors"
+                  onClick={() => { setSelectedObjective(null); setDropdownOpen(false) }}
+                  className={`w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors ${!selectedObjective ? 'font-medium' : ''}`}
                 >
-                  Aplicar
+                  Todos los objetivos
                 </button>
+                {objectives.map(obj => (
+                  <button
+                    key={obj}
+                    onClick={() => { setSelectedObjective(obj); setDropdownOpen(false) }}
+                    className={`w-full text-left text-xs px-3 py-2 hover:bg-muted/40 transition-colors ${selectedObjective === obj ? 'font-medium' : ''}`}
+                  >
+                    {objectiveLabel(obj)}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -146,9 +131,19 @@ export function MonthlyComparisonTable({ clientId, source, title }: Props) {
                     {cols.map(c => <td key={c.key} className="px-3 py-2 text-right text-muted-foreground">...</td>)}
                   </tr>
                 ))
-              : data!.map(row => (
+              : !data || data.length === 0
+              ? (
+                  <tr>
+                    <td colSpan={cols.length + 1} className="px-3 py-6 text-center text-muted-foreground">
+                      Sin datos para este objetivo
+                    </td>
+                  </tr>
+                )
+              : data.map(row => (
                   <tr key={`${row.year}-${row.month}`} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                    <td className="px-3 py-2 font-medium whitespace-nowrap">{label(row)}</td>
+                    <td className="px-3 py-2 font-medium whitespace-nowrap">
+                      {MONTHS[row.month - 1]} {row.year}
+                    </td>
                     {cols.map(c => (
                       <td key={c.key} className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
                         {c.fmt(row[c.key] as number | null)}
