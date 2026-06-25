@@ -150,6 +150,34 @@ export async function syncRoutes(app: FastifyInstance) {
     }
   })
 
+  // Backfill de objetivos de campaña para registros históricos
+  app.post('/api/sync/meta/backfill-objectives', async (request, reply) => {
+    const body = request.body as { clientId?: unknown }
+    if (!body.clientId || typeof body.clientId !== 'string') {
+      return reply.status(400).send({ error: 'clientId es requerido' })
+    }
+    const client = await prisma.client.findUnique({ where: { id: body.clientId } })
+    if (!client?.metaAdAccountId) {
+      return reply.status(404).send({ error: 'Cliente no encontrado o sin cuenta Meta' })
+    }
+    try {
+      const { fetchCampaignObjectives } = await import('../services/metaApi.js')
+      const objectivesMap = await fetchCampaignObjectives(client.metaAdAccountId, body.clientId)
+      let updated = 0
+      for (const [campaignId, objective] of objectivesMap) {
+        const result = await prisma.campaignMetricDaily.updateMany({
+          where:  { clientId: body.clientId, campaignId },
+          data:   { objective },
+        })
+        updated += result.count
+      }
+      return { ok: true, campaignsFound: objectivesMap.size, rowsUpdated: updated }
+    } catch (err) {
+      app.log.error(err, '[backfill-objectives] error')
+      return reply.status(500).send({ error: String(err) })
+    }
+  })
+
   // Endpoint para probar alertas manualmente
   app.post('/api/alerts/test', async (_request, reply) => {
     const logs: string[] = []
