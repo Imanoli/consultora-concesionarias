@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
 import { useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { KpiCard }           from './KpiCard'
 import { LeadsChart }        from './LeadsChart'
 import { CampaignsTable }    from './CampaignsTable'
@@ -14,7 +14,7 @@ import { DateRangeControls } from './DateRangeControls'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { signOut } from 'next-auth/react'
-import { getMetrics, getDailyMetrics, getCampaigns } from '@/lib/api'
+import { getMetrics, getDailyMetrics, getCampaigns, syncMeta } from '@/lib/api'
 import { presetToRange, formatCurrency, formatNumber, formatPercent, formatDate } from '@/lib/utils'
 import { getClientLogo } from '@/lib/clientLogos'
 import { clientHasGa4, clientHasClarity } from '@/lib/clientFeatures'
@@ -51,8 +51,29 @@ export function DashboardView({
   const logo  = getClientLogo(clientId)
   const [range, setRange]         = useState<DateRange>(() => presetToRange('last_30d'))
   const [metaModal, setMetaModal] = useState(false)
+  const [syncing, setSyncing]     = useState(false)
+  const [syncMsg, setSyncMsg]     = useState<string | null>(null)
+  const { mutate } = useSWRConfig()
 
   const swrKey = [clientId, range.from, range.to] as const
+
+  async function handleSyncToday() {
+    setSyncing(true); setSyncMsg(null)
+    try {
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+      const result = await syncMeta(clientId, today)
+      await mutate((key) => Array.isArray(key) && key[0] === clientId)
+      setSyncMsg(
+        result.campaignsProcessed > 0
+          ? `Actualizado — ${result.campaignsProcessed} campañas, ${formatCurrency(result.spendTotal)}`
+          : 'Actualizado — sin datos de hoy todavía'
+      )
+    } catch (err) {
+      setSyncMsg(`Error: ${(err as Error).message}`)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const { data: metrics,   isLoading: lM, error: eM } =
     useSWR([...swrKey, 'metrics'],    () => getMetrics({ clientId, from: range.from, to: range.to }))
@@ -139,8 +160,20 @@ export function DashboardView({
             + Cargar saldo
           </button>
         )}
+        {isAdmin && (
+          <button
+            onClick={handleSyncToday}
+            disabled={syncing}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap disabled:opacity-50"
+          >
+            {syncing ? 'Actualizando...' : '↻ Actualizar hoy'}
+          </button>
+        )}
         <div className="flex-1 border-t border-border" />
       </div>
+      {syncMsg && (
+        <p className="text-xs text-muted-foreground -mt-4">{syncMsg}</p>
+      )}
 
       {isAdmin && (
         <FundLoadModal

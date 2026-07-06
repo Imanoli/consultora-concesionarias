@@ -150,6 +150,26 @@ export async function getAllCampaigns(p: { clientId: string; source: string }): 
   })
 }
 
+export interface SyncMetaResult {
+  date:               string
+  campaignsProcessed: number
+  leadsTotal:         number
+  spendTotal:         number
+}
+
+export async function syncMeta(clientId: string, date: string): Promise<SyncMetaResult> {
+  const res = await fetch(`${BASE}/api/sync/meta`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ clientId, date }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(body.error ?? `Error ${res.status}`)
+  }
+  return res.json() as Promise<SyncMetaResult>
+}
+
 export async function saveRevenue(p: {
   clientId:   string
   year:       number
