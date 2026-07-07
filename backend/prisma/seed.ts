@@ -27,6 +27,14 @@ const clients = [
     metaAdAccountId: null,
     metaLeadActions: [],
   },
+  {
+    id: 'caradvice',
+    name: 'CAR ADVICE',
+    industry: 'automotive_retail',
+    active: true,
+    metaAdAccountId: null,
+    metaLeadActions: [],
+  },
 ]
 
 async function main() {
