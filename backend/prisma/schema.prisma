@@ -16,9 +16,11 @@ model Client {
   metaLeadActions      Json?     @map("meta_lead_actions")
   metaFondosUsd        Decimal?  @map("meta_fondos_usd") @db.Decimal(10, 2)
   metaFondosUpdatedAt  DateTime? @map("meta_fondos_updated_at")
+  metaActiveCampaigns  Int?      @map("meta_active_campaigns")
   googleAdsCustomerId       String?   @map("google_ads_customer_id") @db.VarChar(20)
   googleAdsFondosArs        Decimal?  @map("google_ads_fondos_ars") @db.Decimal(12, 2)
   googleAdsFondosUpdatedAt  DateTime? @map("google_ads_fondos_updated_at")
+  googleAdsActiveCampaigns  Int?      @map("google_ads_active_campaigns")
   createdAt          DateTime  @default(now()) @map("created_at")
 
   dailyMetrics         DailyMetric[]

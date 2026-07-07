@@ -45,15 +45,31 @@ export async function checkAlerts(
   const metaFondos = await calcFondos(clientId, 'meta')
   const gadsFondos = googleAdsCustomerId ? await calcFondos(clientId, 'google_ads') : null
 
+  const activeCampaigns = status.campaigns.filter(c => c.effectiveStatus === 'ACTIVE')
+
+  // Estado de campañas Google Ads — se consulta siempre (no solo con fondos bajos)
+  // para poder distinguir "sin fondos" de "campañas pausadas por el cliente" en cualquier alerta.
+  let gadsActiveCampaigns: number | null = null
+  if (googleAdsCustomerId) {
+    try {
+      const gadsStatus = await fetchGoogleAdsCampaignStatus(googleAdsCustomerId)
+      gadsActiveCampaigns = gadsStatus.filter(c => c.status === 'ENABLED').length
+    } catch (err) {
+      log(`[alertas] Error al consultar estado campañas Google Ads (${clientName}): ${err}`)
+    }
+  }
+
   // Guardar en clients table
   await prisma.client.update({
     where: { id: clientId },
     data: {
       metaFondosUsd:       metaFondos,
       metaFondosUpdatedAt: new Date(),
+      metaActiveCampaigns: activeCampaigns.length,
       ...(googleAdsCustomerId ? {
         googleAdsFondosArs:       gadsFondos,
         googleAdsFondosUpdatedAt: new Date(),
+        googleAdsActiveCampaigns: gadsActiveCampaigns,
       } : {}),
     },
   })
@@ -68,8 +84,6 @@ export async function checkAlerts(
   }
 
   const alerts: string[] = []
-
-  const activeCampaigns = status.campaigns.filter(c => c.effectiveStatus === 'ACTIVE')
 
   // Alerta fondos Meta rojos — solo si hay campañas activas corriendo
   if (metaFondos !== null && metaFondos < META_RED_USD && activeCampaigns.length > 0) {
@@ -107,17 +121,7 @@ export async function checkAlerts(
   }
 
   // Alerta fondos Google Ads rojos — solo si hay campañas activas
-  let gadsActiveCampaigns = 0
-  if (googleAdsCustomerId && gadsFondos !== null && gadsFondos < GADS_RED_ARS) {
-    try {
-      const gadsStatus = await fetchGoogleAdsCampaignStatus(googleAdsCustomerId)
-      gadsActiveCampaigns = gadsStatus.filter(c => c.status === 'ENABLED').length
-    } catch (err) {
-      log(`[alertas] Error al consultar estado campañas Google Ads (${clientName}): ${err}`)
-    }
-  }
-
-  if (gadsFondos !== null && gadsFondos < GADS_RED_ARS && gadsActiveCampaigns > 0) {
+  if (gadsFondos !== null && gadsFondos < GADS_RED_ARS && (gadsActiveCampaigns ?? 0) > 0) {
     alerts.push(`
       <tr>
         <td style="padding:10px 0; border-bottom:1px solid #eee;">

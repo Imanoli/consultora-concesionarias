@@ -242,12 +242,19 @@ export async function runDailyAnalysis(
     const subject = `Resumen diario - ${client.name}`
 
     // Alertas de saldo rojo para incluir en el email
-    const freshClient = await prisma.client.findUnique({ where: { id: clientId }, select: { metaFondosUsd: true, googleAdsFondosArs: true } })
+    // Solo se incluyen si la plataforma tiene campañas activas: sin esto, un cliente
+    // con campañas pausadas a propósito (o sin cargar nunca fondos) recibe alertas falsas.
+    const freshClient = await prisma.client.findUnique({
+      where:  { id: clientId },
+      select: { metaFondosUsd: true, metaActiveCampaigns: true, googleAdsFondosArs: true, googleAdsActiveCampaigns: true },
+    })
     const balanceWarnings: string[] = []
-    const metaUsd  = Number(freshClient?.metaFondosUsd  ?? 999)
-    const gadsArs  = Number(freshClient?.googleAdsFondosArs ?? 999_999)
-    if (metaUsd  < 40)     balanceWarnings.push(`Meta Ads — Fondos críticos: USD ${metaUsd.toFixed(2)}. Recargá antes de que se pausan las campañas.`)
-    if (gadsArs  < 50_000) balanceWarnings.push(`Google Ads — Fondos críticos: ARS ${gadsArs.toLocaleString('es-AR')}. Recargá antes de que se pausan las campañas.`)
+    const metaUsd    = Number(freshClient?.metaFondosUsd  ?? 999)
+    const gadsArs     = Number(freshClient?.googleAdsFondosArs ?? 999_999)
+    const metaActive  = freshClient?.metaActiveCampaigns      ?? 0
+    const gadsActive   = freshClient?.googleAdsActiveCampaigns ?? 0
+    if (metaUsd  < 40     && metaActive > 0) balanceWarnings.push(`Meta Ads — Fondos críticos: USD ${metaUsd.toFixed(2)}. Recargá antes de que se pausan las campañas.`)
+    if (gadsArs  < 50_000 && gadsActive > 0) balanceWarnings.push(`Google Ads — Fondos críticos: ARS ${gadsArs.toLocaleString('es-AR')}. Recargá antes de que se pausan las campañas.`)
 
     await sendAlert(subject, buildEmailHtml(client.name, targetDate, insights, balanceWarnings))
     log(`[analysis] Email enviado a ${process.env.EMAIL_TO}`)
