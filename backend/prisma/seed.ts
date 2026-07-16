@@ -18,6 +18,11 @@ const clients = [
     active: true,
     metaAdAccountId: null,
     metaLeadActions: [],
+    kommoSubdomain: 'dakotacars',
+    kommoStatusMapping: {
+      '142': 'Venta Facturada',
+      '143': 'Venta Perdida Definitiva',
+    },
   },
   {
     id: 'cg',
@@ -32,16 +37,17 @@ const clients = [
     name: 'CAR ADVICE',
     industry: 'automotive_retail',
     active: true,
-    metaAdAccountId: null,
-    metaLeadActions: [],
+    metaAdAccountId: 'act_1858509445080084',
+    metaLeadActions: ['onsite_conversion.messaging_conversation_started_7d'],
   },
 ]
 
 async function main() {
   for (const client of clients) {
+    const { id, ...fields } = client
     await prisma.client.upsert({
-      where:  { id: client.id },
-      update: { name: client.name, industry: client.industry, active: client.active, metaAdAccountId: client.metaAdAccountId, metaLeadActions: client.metaLeadActions },
+      where:  { id },
+      update: fields,
       create: client,
     })
     console.log(`Upserted: ${client.name}`)

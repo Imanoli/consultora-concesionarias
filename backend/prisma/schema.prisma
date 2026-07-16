@@ -21,6 +21,8 @@ model Client {
   googleAdsFondosArs        Decimal?  @map("google_ads_fondos_ars") @db.Decimal(12, 2)
   googleAdsFondosUpdatedAt  DateTime? @map("google_ads_fondos_updated_at")
   googleAdsActiveCampaigns  Int?      @map("google_ads_active_campaigns")
+  kommoSubdomain       String?   @map("kommo_subdomain")
+  kommoStatusMapping   Json?     @map("kommo_status_mapping")
   createdAt          DateTime  @default(now()) @map("created_at")
 
   dailyMetrics         DailyMetric[]
@@ -29,6 +31,7 @@ model Client {
   fundLoads            FundLoad[]
   users                User[]
   revenueEntries       RevenueEntry[]
+  kommoLeadEvents      KommoLeadEvent[]
 
   @@map("clients")
 }
@@ -136,6 +139,34 @@ model RevenueEntry {
 
   @@unique([clientId, year, month])
   @@map("revenue_entries")
+}
+
+model KommoLeadEvent {
+  id               Int       @id @default(autoincrement())
+  clientId         String    @map("client_id")
+  kommoLeadId      String    @map("kommo_lead_id")      @db.VarChar(30)
+  kommoStatusId    String    @map("kommo_status_id")    @db.VarChar(30)
+  kommoOldStatusId String?   @map("kommo_old_status_id") @db.VarChar(30)
+  kommoPipelineId  String?   @map("kommo_pipeline_id")  @db.VarChar(30)
+  eventName        String    @map("event_name")         @db.VarChar(60)
+  matchKey         String    @map("match_key")          @db.VarChar(20)
+  emailHash        String?   @map("email_hash")         @db.VarChar(64)
+  phoneHash        String?   @map("phone_hash")         @db.VarChar(64)
+  status           String    @default("pending")        @db.VarChar(10)
+  metaEventId      String?   @map("meta_event_id")      @db.VarChar(100)
+  metaFbtraceId    String?   @map("meta_fbtrace_id")    @db.VarChar(60)
+  metaErrorMessage String?   @map("meta_error_message") @db.VarChar(500)
+  attempts         Int       @default(0)
+  rawWebhook       Json      @map("raw_webhook")
+  sentAt           DateTime? @map("sent_at")
+  createdAt        DateTime  @default(now())            @map("created_at")
+  updatedAt        DateTime  @updatedAt                 @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, kommoLeadId, kommoStatusId])
+  @@index([clientId, status])
+  @@map("kommo_lead_events")
 }
 
 model AiInsight {
