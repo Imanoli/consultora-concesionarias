@@ -16,7 +16,10 @@ const statusChangeSchema = z.object({
 
 const webhookBodySchema = z.object({
   leads: z.object({
+    // "status": nombre de clave de versiones viejas de la API. "update": lo que
+    // realmente manda el evento "Lead editado" (incluye status_id cuando cambió de etapa).
     status: z.array(statusChangeSchema).optional(),
+    update: z.array(statusChangeSchema).optional(),
   }).optional(),
 }).passthrough()
 
@@ -48,7 +51,10 @@ export async function kommoWebhookRoutes(app: FastifyInstance) {
       return reply.status(404).send()
     }
 
-    app.log.info({ contentType: request.headers['content-type'] }, '[kommo] Webhook recibido')
+    app.log.info(
+      { contentType: request.headers['content-type'], rawBody: request.body },
+      '[kommo] Webhook recibido',
+    )
 
     const parsed = webhookBodySchema.safeParse(request.body)
     if (!parsed.success) {
@@ -56,7 +62,7 @@ export async function kommoWebhookRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Formato de webhook no reconocido' })
     }
 
-    const changes = parsed.data.leads?.status ?? []
+    const changes = [...(parsed.data.leads?.status ?? []), ...(parsed.data.leads?.update ?? [])]
     let processed = 0
     let skipped = 0
 
