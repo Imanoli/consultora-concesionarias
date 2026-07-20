@@ -3,6 +3,7 @@ import qs from 'qs'
 import { timingSafeEqual } from 'crypto'
 import { z } from 'zod'
 import { processKommoLeadEvent, type KommoStatusChange } from '../jobs/processKommoLeadEvent.js'
+import { processNewKommoLead } from '../jobs/processNewKommoLead.js'
 
 const toStringId = z.union([z.string(), z.number()]).transform(String)
 
@@ -14,12 +15,17 @@ const statusChangeSchema = z.object({
   last_modified: toStringId.optional(),
 }).passthrough()
 
+const newLeadSchema = z.object({
+  id: toStringId,
+}).passthrough()
+
 const webhookBodySchema = z.object({
   leads: z.object({
     // "status": nombre de clave de versiones viejas de la API. "update": lo que
     // realmente manda el evento "Lead editado" (incluye status_id cuando cambió de etapa).
     status: z.array(statusChangeSchema).optional(),
     update: z.array(statusChangeSchema).optional(),
+    add:    z.array(newLeadSchema).optional(),
   }).optional(),
 }).passthrough()
 
@@ -73,6 +79,17 @@ export async function kommoWebhookRoutes(app: FastifyInstance) {
         else skipped++
       } catch (err) {
         app.log.error(err, `[kommo] Error inesperado procesando lead ${change.id}`)
+        skipped++
+      }
+    }
+
+    const newLeads = parsed.data.leads?.add ?? []
+    for (const lead of newLeads) {
+      try {
+        await processNewKommoLead(clientId, lead.id, msg => app.log.info(msg))
+        processed++
+      } catch (err) {
+        app.log.error(err, `[kommo] Error inesperado procesando lead nuevo ${lead.id}`)
         skipped++
       }
     }

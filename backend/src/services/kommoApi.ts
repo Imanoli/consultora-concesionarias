@@ -101,15 +101,7 @@ export async function addLeadNote(leadId: string, text: string, clientId: string
   }
 }
 
-/**
- * Completa el campo personalizado "Link presupuesto" (u otro configurado
- * via KOMMO_QUOTE_FIELD_ID_<CLIENTE>) en el lead, si ese cliente tiene
- * el campo configurado. Si no hay campo configurado, no hace nada.
- */
-export async function setQuoteLinkField(leadId: string, url: string, clientId: string): Promise<void> {
-  const fieldId = process.env[`KOMMO_QUOTE_FIELD_ID_${clientId.toUpperCase()}`]
-  if (!fieldId) return
-
+async function updateLeadCustomField(leadId: string, fieldId: number, value: string, clientId: string): Promise<void> {
   const { subdomain, token } = requireKommoEnv(clientId)
   const base = `https://${subdomain}.kommo.com/api/v4`
 
@@ -120,10 +112,39 @@ export async function setQuoteLinkField(leadId: string, url: string, clientId: s
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      custom_fields_values: [{ field_id: Number(fieldId), values: [{ value: url }] }],
+      custom_fields_values: [{ field_id: fieldId, values: [{ value }] }],
     }),
   })
   if (!res.ok) {
-    throw new KommoApiError(`Error al actualizar campo de presupuesto en lead ${leadId} (HTTP ${res.status})`, res.status)
+    throw new KommoApiError(`Error al actualizar campo del lead ${leadId} (HTTP ${res.status})`, res.status)
   }
+}
+
+/**
+ * Completa el campo personalizado "Link presupuesto" (u otro configurado
+ * via KOMMO_QUOTE_FIELD_ID_<CLIENTE>) en el lead, si ese cliente tiene
+ * el campo configurado. Si no hay campo configurado, no hace nada.
+ */
+export async function setQuoteLinkField(leadId: string, url: string, clientId: string): Promise<void> {
+  const fieldId = process.env[`KOMMO_QUOTE_FIELD_ID_${clientId.toUpperCase()}`]
+  if (!fieldId) return
+  await updateLeadCustomField(leadId, Number(fieldId), url, clientId)
+}
+
+/**
+ * Completa el campo personalizado "Crear presupuesto" (via
+ * KOMMO_CREATE_QUOTE_FIELD_ID_<CLIENTE>) con un link directo al
+ * formulario de nuevo presupuesto, precargado con este lead. Se llama
+ * cuando se crea un lead nuevo — asi el vendedor lo ve como link
+ * clickeable en la tarjeta del lead sin tener que buscar el ID a mano.
+ */
+export async function setCreateQuoteLinkField(leadId: string, clientId: string): Promise<void> {
+  const fieldId = process.env[`KOMMO_CREATE_QUOTE_FIELD_ID_${clientId.toUpperCase()}`]
+  if (!fieldId) return
+
+  const suffix      = clientId.toUpperCase()
+  const frontendUrl = process.env[`FRONTEND_URL_${suffix}`] ?? process.env.FRONTEND_URL ?? 'http://localhost:3000'
+  const url         = `${frontendUrl}/dashboard/presupuestos/nuevo?client=${clientId}&leadId=${leadId}`
+
+  await updateLeadCustomField(leadId, Number(fieldId), url, clientId)
 }
