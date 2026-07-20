@@ -94,7 +94,7 @@ export async function addLeadNote(leadId: string, text: string, clientId: string
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify([{ entity_id: Number(leadId), note_type: 4, params: { text } }]),
+    body: JSON.stringify([{ entity_id: Number(leadId), note_type: 'common', params: { text } }]),
   })
   if (!res.ok) {
     throw new KommoApiError(`Error al agregar nota al lead ${leadId} (HTTP ${res.status})`, res.status)
