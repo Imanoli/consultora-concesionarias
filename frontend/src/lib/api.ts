@@ -1,4 +1,5 @@
 import type { Client, MetricsResponse, DailyMetricsResponse, CampaignsResponse } from '@/types/metrics'
+import type { Quote, CreateQuotePayload, QuotePrefill } from '@/types/quotes'
 
 // Dev: NEXT_PUBLIC_API_URL=http://localhost:3001 (directo al backend local)
 // Prod: BASE='/backend' → rewrites de Next.js enrutan /backend/* al VPS
@@ -189,4 +190,30 @@ export async function saveRevenue(p: {
     throw new Error(body.error ?? `Error ${res.status}`)
   }
   return res.json() as Promise<{ ok: boolean }>
+}
+
+export async function getQuotes(clientId: string): Promise<Quote[]> {
+  const { data } = await apiFetch<{ data: Quote[] }>('/api/quotes', { clientId })
+  return data
+}
+
+export async function getQuote(id: number, clientId: string): Promise<{ data: Quote; publicUrl: string }> {
+  return apiFetch<{ data: Quote; publicUrl: string }>(`/api/quotes/${id}`, { clientId })
+}
+
+export async function prefillFromLead(clientId: string, leadId: string): Promise<QuotePrefill> {
+  return apiFetch<QuotePrefill>('/api/quotes/prefill', { clientId, leadId })
+}
+
+export async function createQuote(payload: CreateQuotePayload): Promise<{ ok: boolean; quote: Quote; publicUrl: string }> {
+  const res = await fetch(`${BASE}/api/quotes`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(body.error ?? `Error ${res.status}`)
+  }
+  return res.json() as Promise<{ ok: boolean; quote: Quote; publicUrl: string }>
 }

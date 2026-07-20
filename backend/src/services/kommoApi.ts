@@ -1,4 +1,5 @@
 export interface KommoContact {
+  name: string | null
   email: string | null
   phone: string | null
 }
@@ -34,6 +35,7 @@ interface KommoCustomField {
 }
 
 interface KommoContactResponse {
+  name?: string | null
   custom_fields_values?: KommoCustomField[] | null
 }
 
@@ -63,7 +65,7 @@ export async function fetchLeadContact(leadId: string, clientId: string): Promis
   }
   const lead = await leadRes.json() as KommoLeadResponse
   const contactId = lead._embedded?.contacts?.[0]?.id
-  if (!contactId) return { email: null, phone: null }
+  if (!contactId) return { name: null, email: null, phone: null }
 
   const contactRes = await fetch(`${base}/contacts/${contactId}`, { headers })
   if (!contactRes.ok) {
@@ -72,7 +74,29 @@ export async function fetchLeadContact(leadId: string, clientId: string): Promis
   const contact = await contactRes.json() as KommoContactResponse
 
   return {
+    name: contact.name ?? null,
     email: extractField(contact.custom_fields_values, 'EMAIL'),
     phone: extractField(contact.custom_fields_values, 'PHONE'),
+  }
+}
+
+/**
+ * Agrega una nota de texto a un lead — se usa para dejar el link del
+ * presupuesto vinculado directamente en Kommo.
+ */
+export async function addLeadNote(leadId: string, text: string, clientId: string): Promise<void> {
+  const { subdomain, token } = requireKommoEnv(clientId)
+  const base = `https://${subdomain}.kommo.com/api/v4`
+
+  const res = await fetch(`${base}/leads/notes`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([{ entity_id: Number(leadId), note_type: 4, params: { text } }]),
+  })
+  if (!res.ok) {
+    throw new KommoApiError(`Error al agregar nota al lead ${leadId} (HTTP ${res.status})`, res.status)
   }
 }

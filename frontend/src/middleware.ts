@@ -4,7 +4,10 @@ import { NextResponse } from 'next/server'
 export default auth(function middleware(req) {
   const isLoggedIn  = !!req.auth
   const pathname    = req.nextUrl.pathname
-  const isPublic    = pathname.startsWith('/login') || pathname.startsWith('/api/auth')
+  const isPublic    = pathname.startsWith('/login')
+    || pathname.startsWith('/api/auth')
+    || pathname.startsWith('/q/')                      // vista publica de presupuestos (sin login)
+    || pathname.startsWith('/backend/api/public/')      // descargas publicas (PDF) proxiadas al backend
 
   if (!isLoggedIn && !isPublic) {
     return NextResponse.redirect(new URL('/login', req.url))
