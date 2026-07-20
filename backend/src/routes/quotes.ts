@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
 import prisma from '../db/prisma.js'
-import { fetchLeadContact, addLeadNote, KommoApiError } from '../services/kommoApi.js'
+import { fetchLeadContact, addLeadNote, setQuoteLinkField, KommoApiError } from '../services/kommoApi.js'
 import { buildQuotePdf } from '../services/quotePdf.js'
 
 const PAYMENT_METHODS = ['efectivo', 'financiado', 'permuta', 'mixto'] as const
@@ -132,6 +132,14 @@ export async function quoteRoutes(app: FastifyInstance) {
           where: { id: quote.id },
           data:  { kommoNoteStatus: 'failed' },
         })
+      }
+
+      // Campo personalizado "Link presupuesto" — best effort, no bloquea la creación
+      // ni pisa el resultado de la nota si falla.
+      try {
+        await setQuoteLinkField(data.kommoLeadId, publicUrl(token), data.clientId)
+      } catch (err) {
+        app.log.error(err, `[quotes] Error al actualizar el campo de presupuesto en Kommo (presupuesto ${quote.id})`)
       }
     }
 

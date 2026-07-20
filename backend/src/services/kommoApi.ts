@@ -100,3 +100,30 @@ export async function addLeadNote(leadId: string, text: string, clientId: string
     throw new KommoApiError(`Error al agregar nota al lead ${leadId} (HTTP ${res.status})`, res.status)
   }
 }
+
+/**
+ * Completa el campo personalizado "Link presupuesto" (u otro configurado
+ * via KOMMO_QUOTE_FIELD_ID_<CLIENTE>) en el lead, si ese cliente tiene
+ * el campo configurado. Si no hay campo configurado, no hace nada.
+ */
+export async function setQuoteLinkField(leadId: string, url: string, clientId: string): Promise<void> {
+  const fieldId = process.env[`KOMMO_QUOTE_FIELD_ID_${clientId.toUpperCase()}`]
+  if (!fieldId) return
+
+  const { subdomain, token } = requireKommoEnv(clientId)
+  const base = `https://${subdomain}.kommo.com/api/v4`
+
+  const res = await fetch(`${base}/leads/${leadId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      custom_fields_values: [{ field_id: Number(fieldId), values: [{ value: url }] }],
+    }),
+  })
+  if (!res.ok) {
+    throw new KommoApiError(`Error al actualizar campo de presupuesto en lead ${leadId} (HTTP ${res.status})`, res.status)
+  }
+}
